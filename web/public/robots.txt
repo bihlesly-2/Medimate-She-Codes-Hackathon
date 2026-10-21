@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /care
+Disallow: /pharmacy
+Disallow: /admin
+Disallow: /api

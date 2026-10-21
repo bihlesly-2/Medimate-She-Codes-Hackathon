@@ -1,0 +1,26 @@
+# Optional: run a real PostgreSQL instead of the embedded PGlite database.
+# Then set DATABASE_URL=postgres://medimate:medimate@localhost:5432/medimate in .env
+#
+# Redis is included for a future BullMQ queue adapter. The current reminder engine is
+# database-backed (see docs/REMINDERS.md) and does not need Redis.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: medimate
+      POSTGRES_PASSWORD: medimate
+      POSTGRES_DB: medimate
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medimate"]
+      interval: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+volumes:
+  pgdata:

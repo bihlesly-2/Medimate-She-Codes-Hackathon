@@ -1,0 +1,17 @@
+{
+  "name": "@medimate/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared, framework-free MEDIMATE logic: validation schemas, SMS parser, USSD state machine, stock freshness, entitlements, units and time zones.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
+}

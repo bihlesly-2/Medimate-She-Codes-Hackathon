@@ -1,0 +1,15 @@
+{
+  "name": "MEDIMATE — Track • Remind • Live Healthier",
+  "short_name": "MEDIMATE",
+  "description": "Find verified pharmacies, compare reported prices, medicine reminders and a simple health log.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F7FAFC",
+  "theme_color": "#0B6FD0",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "tagline": "Track • Remind • Live Healthier",
+  "skip": "Skip to main content",
+  "demo": {
+    "banner": "the pharmacies, people and prices here are made up. SMS, USSD and payments are simulated, so please don't enter real health information.",
+    "badge": "Demo"
+  },
+  "nav": {
+    "home": "Home",
+    "find": "Find a pharmacy",
+    "medicines": "Medicines",
+    "simulator": "SMS & USSD",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "dashboard": "Today",
+    "reminders": "Reminders",
+    "myMedicines": "My medicines",
+    "checkups": "Checkups",
+    "health": "Readings",
+    "activity": "Steps",
+    "water": "Water",
+    "progress": "Streaks",
+    "history": "History",
+    "caretakers": "Caretakers",
+    "messages": "Messages",
+    "settings": "Settings",
+    "billing": "Plan",
+    "care": "People I care for",
+    "pharmacy": "Pharmacy",
+    "admin": "Admin",
+    "menu": "Menu",
+    "myHealth": "My health"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "back": "Back",
+    "continue": "Continue",
+    "taken": "Taken",
+    "skip": "Skip",
+    "call": "Call",
+    "ask": "Ask this pharmacy",
+    "search": "Search",
+    "add": "Add",
+    "delete": "Delete",
+    "close": "Close"
+  },
+  "landing": {
+    "title": "Which pharmacy has your medicine, and at what price?",
+    "lead": "Search the pharmacies around Buea, see what they last reported and when, then call before you go. MEDIMATE also reminds you to take the medicine your health worker prescribed.",
+    "ctaFind": "Search pharmacies",
+    "ctaStart": "Create a free account",
+    "howTitle": "How it works",
+    "how1": "Type the medicine and your area. You see verified pharmacies, the stock and price each one last reported, and how long ago.",
+    "how2": "Copy your prescription into MEDIMATE exactly as written. At each time you set, you get an SMS or app reminder. Reply TAKEN or SKIP.",
+    "how3": "If you want, log water, steps and readings, and let one family member see the parts you choose.",
+    "channelsTitle": "No smartphone? Use SMS or USSD.",
+    "channelsLead": "The same account works from a basic phone. Send a short command by SMS, or dial the menu.",
+    "safetyTitle": "What MEDIMATE will and won't do",
+    "safety1": "It never diagnoses, prescribes or changes a dose. It repeats what your prescription says.",
+    "safety2": "Only pharmacies an admin has checked are listed. Reports older than 48 hours are marked.",
+    "safety3": "A caretaker sees only the categories you tick, and you can stop sharing at any time.",
+    "safety4": "Reminder SMS say 'time for your medicine'. They never name the medicine or a condition.",
+    "faqTitle": "Questions people ask"
+  },
+  "auth": {
+    "title": "Sign in",
+    "lead": "Use your email, Google, or a code sent to your phone.",
+    "phone": "Phone number",
+    "phoneHint": "Cameroon numbers can be written as 6XX XX XX XX.",
+    "sendCode": "Send me a code",
+    "code": "6-digit code",
+    "verify": "Sign in",
+    "changeNumber": "Use a different number",
+    "devCode": "Demo code",
+    "devCodeNote": "Shown here because this is a fictional demo number. Real numbers get the code by SMS."
+  },
+  "disclaimer": {
+    "short": "MEDIMATE does not diagnose or replace a health professional."
+  }
+}
