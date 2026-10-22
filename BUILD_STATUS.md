@@ -7,7 +7,7 @@ Status labels follow `MEDIMATE_Claude_Code_Kit/MEDIMATE_EXECUTION.md` §1. Last 
 | Check | Command | Result (2026-10-22) |
 |---|---|---|
 | Shared unit tests (SMS parser, USSD machine, freshness, entitlements, time zones, units, CSV, phone, adherence) | `npm test -w shared` | 66 passed |
-| Server integration tests (PGlite in-memory, fake clock) + Vercel path restore | `npm test -w server` | 35 passed (4 files) |
+| Server integration tests (PGlite in-memory, fake clock) + Vercel path restore | `npm test -w server` | 43 passed (6 files: incl. push notifications, nudges, assistant route) |
 | Type check | `npm run typecheck` (shared, server, web) | passes |
 | Lint | `npx eslint .` | passes (exit 0) |
 | Production build | `npm run build` (server bundle + Vite) | passes |
@@ -19,7 +19,7 @@ Status labels follow `MEDIMATE_Claude_Code_Kit/MEDIMATE_EXECUTION.md` §1. Last 
 
 https://medimate-she-codes.vercel.app (Vercel Hobby, Neon Postgres). Checked live: `/api/health` ok with database; config shows demo mode, Firebase, Fapshi sandbox, SMS simulator; search returns 4 results; phone login with demo 600000001 reaches the dashboard at 375 px; water log 201; SMS simulator `WATER 2 GLASSES` replies; USSD home menu opens. Email/Google buttons show (not signed in with a real account yet). Taken not tested live: Ama's first reminder (08:00 WAT) was not due yet. Fapshi sandbox checkout tested locally only.
 
-Deployed build is commit 5cf121a. Commits 1af6046 (unreachable-server notice) and 7a3c907 (Install app button) are **Blocked** by Vercel: Hobby only deploys private-repo commits authored by the account owner, and these are authored by CHIF3N. Fix: make the repo public, author commits as bihlesly-2, or upgrade to Pro.
+The repo is now public, which unblocked Vercel deploys of later commits. **Not yet checked live** after the redesign: push notifications, the new Find screen (distance, minutes, directions), the Me hub, onboarding, the Today path and the assistant. Migration `0002_notifications` runs during the Vercel build.
 
 Fapshi: sandbox webhook URL set; webhook secret not yet set on Fapshi (webhooks get 401; payments still settle by status polling). Twilio: trial expired and unavailable in Cameroon; needs a paid upgrade.
 
@@ -38,6 +38,17 @@ Fapshi: sandbox webhook URL set; webhook secret not yet set on Fapshi (webhooks 
 | 8 Pharmacy & caretaker portals | Implemented + tested. |
 | 9 Subscription, admin, localisation | Implemented + tested (demo checkout); Fapshi adapter implemented + unit-tested with a mocked API. |
 | 10 Hardening & handoff | README and `docs/` written; Vercel Build Output script done; deployment in progress (see below). E2E: not implemented. |
+
+## New in the app redesign (2026-10-22)
+
+| Feature | State |
+|---|---|
+| App-style UI: splash, welcome, onboarding, Today path, 3D components, Me hub (no hamburger) | Implemented; typecheck, lint and build pass; checked locally in the browser preview. |
+| Find: type a medicine, get pharmacies with price, distance, estimated walk and taxi minutes, Google Maps directions, Call | Implemented. Minutes are estimates (straight-line distance x 1.3, 4.8 km/h walking, 20 km/h taxi + 2 min), labelled as such. Not yet previewed at 375 px. |
+| Pop-up reminders (Web Push, VAPID), notification inbox, welcome message, water/steps nudges | Implemented + tested with a fake push sender. Live: needs `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` on Vercel. Vercel Hobby cron runs once a day; the 5-minute engine needs the GitHub Actions workflow in `docs/github/reminder-engine.yml` added by the owner (the push token lacks `workflow` scope) plus a `CRON_SECRET` repo secret. |
+| Ask MEDIMATE assistant (Claude Haiku, `claude-haiku-5-5`): logs water, steps, readings, answers reminders, finds medicines, messages caretakers; voice input where the browser supports it | Implemented. Route tests cover auth, validation and the not-configured state; the model loop itself is **not tested against the live API**. Off until `ANTHROPIC_API_KEY` is set. |
+| WhatsApp assistant | Not started. Planned route: Meta WhatsApp Cloud API (free tier for service conversations). |
+| Steps from phone or watch | Not started. Needs a native wrapper (Capacitor + Health Connect / HealthKit) or Fitbit OAuth; manual entry today. |
 
 ## Integrations
 
@@ -60,10 +71,11 @@ Fapshi: sandbox webhook URL set; webhook secret not yet set on Fapshi (webhooks 
 
 ## Open work
 
-1. Owner sign-ins: Vercel (in-app browser, GitHub `bihlesly-2`), Fapshi dashboard (in-app browser), Twilio console (Chrome).
-2. Deploy to Vercel with Neon; set env vars (owner pastes secrets); authorize the Vercel domain in Firebase; Fapshi webhook URL.
-3. Test on the live URL: landing, find + pharmacy detail, phone login 600000001, Taken, simulator SMS/USSD, email login.
-4. Playwright journeys + axe checks.
+1. Owner adds on Vercel: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (from `.env.vercel.local`), `ANTHROPIC_API_KEY`; redeploy.
+2. Owner adds the GitHub Actions workflow from `docs/github/reminder-engine.yml` and the `CRON_SECRET` repo secret.
+3. Owner sets the webhook secret on the Fapshi sandbox page.
+4. Test on the live URL: push on an Android phone, Find with location, onboarding, Today path, assistant, email and Google login with the owner's account.
+5. Playwright journeys + axe checks.
 
 ## Production gates (not solved by code)
 

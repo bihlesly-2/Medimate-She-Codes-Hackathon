@@ -15,5 +15,5 @@ Governing spec: `MEDIMATE_Claude_Code_Kit/MEDIMATE_EXECUTION.md` (source of trut
 ## Rules that are easy to break
 - Never put secrets in git. `.env` is ignored; `.env.example` holds placeholders only.
 - Fictional demo numbers are `+237 600 xxx xxx`; codes are shown on screen only for those (or when the SMS simulator is active). Real numbers always get codes by real SMS.
-- Design: flat surfaces, grouped list rows, no decorative gradients/blobs, no icon-tile card grids, no em dashes in UI copy, labelled bottom tab bar, Atkinson Hyperlegible Next. Mobile first.
+- Design (see `docs/DESIGN.md`): app-like and mobile first, pressable 3D buttons/cards (`.btn-3d`, `.card-3d`), Today path, grouped list rows, Me hub instead of a hamburger, labelled bottom tab bar, no decorative gradients/blobs, no em dashes in UI copy, Atkinson Hyperlegible Next body + Nunito headings.
 - No diagnosis, no dose changes, no unreviewed clinical text, no fake stats.
