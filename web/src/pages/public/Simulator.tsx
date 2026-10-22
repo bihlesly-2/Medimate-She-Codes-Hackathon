@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlarmClock, Hash, PhoneCall, Play, RotateCcw, Send, Smartphone, TimerOff } from 'lucide-react';
-import { Badge, Button, Card, Chip, EmptyState, Field, Input, Notice, Select, Tabs, errorMessage, useToast } from '../../components/ui';
+import { Badge, Button, Card, Chip, EmptyState, ErrorState, Field, Input, Notice, Select, Tabs, errorMessage, useToast } from '../../components/ui';
 import { api, post } from '../../lib/api';
 import { useConfig } from '../../lib/auth';
 
@@ -274,10 +274,18 @@ function UssdSim({ phone }: { phone: string }) {
 }
 
 export default function Simulator() {
-  const { data: config, isPending } = useConfig();
+  const configQuery = useConfig();
+  const { data: config, isPending } = configQuery;
   const [tab, setTab] = useState<'sms' | 'ussd'>('sms');
   const [phone, setPhone] = useState('600000099');
   const [custom, setCustom] = useState('');
+  if (configQuery.isError) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16">
+        <ErrorState error={configQuery.error} onRetry={() => void configQuery.refetch()} />
+      </div>
+    );
+  }
   if (!isPending && !config?.demoMode) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16">

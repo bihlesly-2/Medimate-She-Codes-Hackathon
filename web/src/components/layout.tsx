@@ -37,8 +37,15 @@ import { BrandLink, Wordmark } from './brand';
 import { cx } from './ui';
 
 export function DemoBanner() {
-  const { data } = useConfig();
+  const { data, isError } = useConfig();
   const { t } = useTranslation();
+  if (isError) {
+    return (
+      <div className="border-b border-red-200 bg-danger-bg px-4 py-1.5 text-center text-xs text-[#7a1717] sm:text-sm" role="alert">
+        MEDIMATE cannot reach its server right now. Search, sign-in and the simulator will work again when it is back.
+      </div>
+    );
+  }
   if (!data?.demoMode) return null;
   return (
     <div className="border-b border-amber-200 bg-warning-bg px-4 py-1.5 text-center text-xs text-[#6b3a00] sm:text-sm" role="note">
