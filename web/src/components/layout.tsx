@@ -345,11 +345,10 @@ export function AppShell({ children }: { children?: ReactNode }) {
   );
 }
 
-/** Floating "Ask" button for the assistant, shown on app screens when the server has it switched on. */
+/** Floating "Ask" button for the assistant on app screens (the screen itself explains if the server has no AI key yet). */
 function AskButton() {
-  const { data: config } = useConfig();
   const { pathname } = useLocation();
-  if (!config?.assistant || pathname.startsWith('/app/assistant') || pathname.startsWith('/app/onboarding')) return null;
+  if (pathname.startsWith('/app/assistant') || pathname.startsWith('/app/onboarding')) return null;
   return (
     <Link
       to="/app/assistant"

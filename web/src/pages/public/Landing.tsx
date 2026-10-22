@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { BellRing, Check, ChevronDown, Droplets, Footprints, MapPin, MessageSquareText, Pill, Search, ShieldCheck, Smartphone } from 'lucide-react';
 import { InstallAppButton } from '../../components/install';
 import { Button, Input, LinkButton, cx } from '../../components/ui';
-import { useConfig, useMe } from '../../lib/auth';
+import { useConfig, useLogout, useMe } from '../../lib/auth';
 
 /** Illustration of the three daily goals, built from the real app's own building blocks. */
 function GoalsIllustration() {
@@ -46,6 +46,7 @@ export default function Landing() {
   const nav = useNavigate();
   const { data: config } = useConfig();
   const me = useMe();
+  const logout = useLogout();
   const [q, setQ] = useState('');
   const trial = config?.trialDays ?? 30;
 
@@ -67,9 +68,14 @@ export default function Landing() {
           </p>
           <div className="mx-auto mt-7 grid max-w-sm gap-3 md:mx-0">
             {me.data ? (
-              <LinkButton to="/app" variant="green" size="lg">
-                Open my day
-              </LinkButton>
+              <>
+                <LinkButton to="/app" variant="green" size="lg">
+                  Continue as {me.data.displayName?.split(' ')[0] ?? 'me'}
+                </LinkButton>
+                <button type="button" onClick={() => void logout()} className="min-h-11 text-sm font-bold text-primary-700 underline underline-offset-4">
+                  Not you? Sign out and use another account
+                </button>
+              </>
             ) : (
               <>
                 <LinkButton to="/login?mode=signup" variant="green" size="lg">

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Car, Clock, Footprints, LocateFixed, Map as MapIcon, Navigation, Phone, Search, Tag, X } from 'lucide-react';
+import { ArrowLeft, Car, Clock, Footprints, LocateFixed, Map as MapIcon, Navigation, Phone, Search, Tag, X } from 'lucide-react';
 import { Badge, Button, Chip, EmptyState, Input, Notice, QueryView, Skeleton, StockBadge, Tabs, cx } from '../../components/ui';
 import { api } from '../../lib/api';
 import { money } from '../../lib/format';
@@ -125,6 +125,7 @@ function OfferCard({ o, best }: { o: Offer; best?: boolean }) {
 }
 
 export default function Find() {
+  const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
   const [focused, setFocused] = useState(false);
@@ -180,6 +181,13 @@ export default function Find() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
+      <button
+        type="button"
+        onClick={() => (window.history.length > 1 ? nav(-1) : nav('/'))}
+        className="-ml-2 mb-2 inline-flex min-h-11 items-center gap-1 rounded-xl px-2 font-brand font-extrabold text-primary-700 hover:bg-primary-50"
+      >
+        <ArrowLeft className="size-5" aria-hidden /> Back
+      </button>
       <h1 className="text-[28px] leading-tight">Find your medicine</h1>
       <p className="mt-1 text-sm text-muted">Type the medicine. We show verified pharmacies that have it, the price, and how to get there.</p>
 

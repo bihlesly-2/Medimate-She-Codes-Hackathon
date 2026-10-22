@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, Mic, Send, Sparkles } from 'lucide-react';
 import { LogoMark } from '../../components/brand';
-import { Button, EmptyState, Notice, cx, errorMessage } from '../../components/ui';
+import { Button, EmptyState, Notice, cx } from '../../components/ui';
 import { post } from '../../lib/api';
 import { useConfig, useMe } from '../../lib/auth';
 
@@ -84,8 +84,8 @@ export default function Assistant() {
   if (config && !config.assistant) {
     return (
       <div className="mx-auto max-w-xl">
-        <EmptyState icon={Sparkles} title="The assistant is not switched on yet">
-          It needs an AI key on the server. Everything else in MEDIMATE works without it.
+        <EmptyState icon={Sparkles} title="Ask MEDIMATE is under maintenance">
+          We are getting it ready. Please check back soon. Everything else in MEDIMATE works as usual.
         </EmptyState>
       </div>
     );
@@ -143,7 +143,7 @@ export default function Assistant() {
             </div>
           </div>
         ) : null}
-        {ask.isError ? <Notice tone="danger">{errorMessage(ask.error)}</Notice> : null}
+        {ask.isError ? <Notice tone="warning">Ask MEDIMATE is taking a short break. Please try again in a few minutes.</Notice> : null}
         <div ref={endRef} />
       </div>
 
