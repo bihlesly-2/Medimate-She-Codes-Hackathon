@@ -33,7 +33,6 @@ function OfferRow({ o }: { o: Offer }) {
           <p className="text-sm text-muted">
             {o.pharmacy.area}, {o.pharmacy.town}
             {o.pharmacy.distanceKm != null ? ` · ${o.pharmacy.distanceKm} km` : ''}
-            {o.pharmacy.isDemo ? ' · fictional' : ''}
           </p>
         </div>
         <p className="shrink-0 text-lg font-bold text-ink">{money(o.price, o.currency)}</p>
@@ -251,7 +250,7 @@ export default function Find() {
                         to={`/pharmacies/${p.id}`}
                         icon={MapPin}
                         title={p.name}
-                        detail={`${p.area}, ${p.town} · ${p.openNow === null ? 'hours not listed' : p.openNow ? 'open now' : 'closed now'}${p.isDemo ? ' · fictional' : ''}`}
+                        detail={`${p.area}, ${p.town} · ${p.openNow === null ? 'hours not listed' : p.openNow ? 'open now' : 'closed now'}`}
                       />
                     ))}
                   </List>

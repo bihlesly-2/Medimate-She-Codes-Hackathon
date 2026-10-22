@@ -37,20 +37,13 @@ import { BrandLink, Wordmark } from './brand';
 import { InstallAppButton } from './install';
 import { cx } from './ui';
 
+/** Shown only when the API cannot be reached, so missing features are explained, not hidden. */
 export function DemoBanner() {
-  const { data, isError } = useConfig();
-  const { t } = useTranslation();
-  if (isError) {
-    return (
-      <div className="border-b border-red-200 bg-danger-bg px-4 py-1.5 text-center text-xs text-[#7a1717] sm:text-sm" role="alert">
-        MEDIMATE cannot reach its server right now. Search, sign-in and the simulator will work again when it is back.
-      </div>
-    );
-  }
-  if (!data?.demoMode) return null;
+  const { isError } = useConfig();
+  if (!isError) return null;
   return (
-    <div className="border-b border-amber-200 bg-warning-bg px-4 py-1.5 text-center text-xs text-[#6b3a00] sm:text-sm" role="note">
-      <strong className="font-bold">{t('demo.badge')}:</strong> {t('demo.banner')}
+    <div className="border-b border-red-200 bg-danger-bg px-4 py-1.5 text-center text-xs text-[#7a1717] sm:text-sm" role="alert">
+      MEDIMATE cannot reach its server right now. Search, sign-in and the simulator will work again when it is back.
     </div>
   );
 }
@@ -91,7 +84,7 @@ export function Footer() {
         </nav>
       </div>
       <div className="border-t border-border px-4 py-4 text-center text-xs text-muted">
-        {data?.demoMode ? 'Demo build: pharmacies, people and prices are fictional. ' : ''}SMS number {data?.smsShortCode ?? ''} and USSD code {data?.ussdCode ?? ''} are placeholders until a telecom operator provisions them.
+        SMS number {data?.smsShortCode ?? ''} and USSD code {data?.ussdCode ?? ''} are placeholders until a telecom operator provisions them.
       </div>
     </footer>
   );
@@ -244,7 +237,7 @@ function SideNav({ onNavigate }: { onNavigate?: () => void }) {
                   to={it.to}
                   end={it.end}
                   onClick={onNavigate}
-                  className={({ isActive }) => cx('flex min-h-11 items-center gap-3 rounded-lg px-3 text-[15px] font-semibold', isActive ? 'bg-primary-50 text-primary-700' : 'text-ink hover:bg-slate-100')}
+                  className={({ isActive }) => cx('flex min-h-12 items-center gap-3 rounded-xl border-2 px-3 font-brand text-[15px] font-extrabold', isActive ? 'border-primary-400 bg-primary-50 text-primary-700' : 'border-transparent text-ink hover:bg-slate-100')}
                 >
                   <it.icon className="size-[18px]" aria-hidden />
                   {it.label}
@@ -294,19 +287,19 @@ function TabBar() {
     ];
   }
   return (
-    <nav aria-label="Main" className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border bg-white md:hidden">
+    <nav aria-label="Main" className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t-2 border-border bg-white md:hidden">
       <ul className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((it) => (
           <li key={it.to}>
             <NavLink
               to={it.to}
               end={it.end}
-              className={({ isActive }) => cx('flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-[11px] font-semibold', isActive ? 'text-primary-700' : 'text-muted')}
+              className={({ isActive }) => cx('flex min-h-[64px] flex-col items-center justify-center gap-0.5 font-brand text-[11px] font-extrabold', isActive ? 'text-primary-700' : 'text-muted')}
             >
               {({ isActive }) => (
                 <>
-                  <span className={cx('grid h-7 w-12 place-items-center rounded-full', isActive && 'bg-primary-50')}>
-                    <it.icon className="size-5" aria-hidden />
+                  <span className={cx('grid h-9 w-12 place-items-center rounded-xl border-2 transition-colors', isActive ? 'border-primary-400 bg-primary-50' : 'border-transparent')}>
+                    <it.icon className="size-6" strokeWidth={isActive ? 2.5 : 2} aria-hidden />
                   </span>
                   {it.label}
                 </>

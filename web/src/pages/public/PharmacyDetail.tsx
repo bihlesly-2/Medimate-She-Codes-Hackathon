@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { REPORT_REASONS, WEEKDAY_NAMES } from '@medimate/shared';
 import { ArrowLeft, Clock, Flag, Hash, MapPin, MessageSquare, Phone, ShieldCheck } from 'lucide-react';
-import { Badge, Button, DemoTag, Dialog, Field, Input, List, ListItem, ListRow, Notice, QueryView, Select, StockBadge, Textarea, errorMessage, useToast } from '../../components/ui';
+import { Badge, Button, Dialog, Field, Input, List, ListItem, ListRow, Notice, QueryView, Select, StockBadge, Textarea, errorMessage, useToast } from '../../components/ui';
 import { api, post } from '../../lib/api';
 import { useMe } from '../../lib/auth';
 import { money } from '../../lib/format';
@@ -62,7 +62,6 @@ export default function PharmacyDetail() {
                 <Badge tone="green" icon={ShieldCheck}>
                   Verified by MEDIMATE admin{p.verifiedUntil ? ` until ${p.verifiedUntil}` : ''}
                 </Badge>
-                {p.isDemo ? <DemoTag /> : null}
               </div>
               <h1 className="mt-2 text-2xl font-bold text-ink sm:text-3xl">{p.name}</h1>
               <p className="text-muted">

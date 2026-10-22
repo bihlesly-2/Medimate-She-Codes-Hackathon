@@ -57,7 +57,7 @@ const AdminAudit = lazy(() => import('./pages/admin/Admin').then((m) => ({ defau
 function RequireAuth({ children, roles }: { children: ReactNode; roles?: Role[] }) {
   const me = useMe();
   const loc = useLocation();
-  if (me.isPending) return <Spinner />;
+  if (me.isPending) return <Spinner full />;
   if (!me.data) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
   if (!me.data.onboarded && loc.pathname !== '/app/onboarding') return <Navigate to="/app/onboarding" replace />;
   if (roles && !hasRole(me.data, ...roles)) {
@@ -83,7 +83,7 @@ function NotFound() {
 export function AppRouter() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<Spinner full />}>
         <Routes>
           <Route element={<PublicLayout />}>
             <Route index element={<Landing />} />
@@ -100,6 +100,14 @@ export function AppRouter() {
             <Route path="*" element={<NotFound />} />
           </Route>
           <Route
+            path="app/onboarding"
+            element={
+              <RequireAuth>
+                <Onboarding />
+              </RequireAuth>
+            }
+          />
+          <Route
             element={
               <RequireAuth>
                 <AppShell />
@@ -107,7 +115,6 @@ export function AppRouter() {
             }
           >
             <Route path="app" element={<Dashboard />} />
-            <Route path="app/onboarding" element={<Onboarding />} />
             <Route path="app/reminders" element={<Reminders />} />
             <Route path="app/medicines" element={<Plans />} />
             <Route path="app/medicines/new" element={<PlanForm />} />

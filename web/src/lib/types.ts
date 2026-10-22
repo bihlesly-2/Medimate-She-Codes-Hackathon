@@ -43,6 +43,8 @@ export interface PublicConfig {
   medicineSafetyNotice: string;
   trialDays: number;
   firebase: { apiKey: string; authDomain: string; projectId: string; appId?: string | null } | null;
+  vapidPublicKey: string | null;
+  assistant: boolean;
 }
 
 export interface PharmacyPublic {

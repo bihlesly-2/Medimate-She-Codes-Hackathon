@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, BookOpen, ExternalLink, Pill, Search, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { DemoTag, EmptyState, Input, LinkButton, List, ListRow, Notice, QueryView, StatusBadge } from '../../components/ui';
+import { EmptyState, Input, LinkButton, List, ListRow, Notice, QueryView, StatusBadge } from '../../components/ui';
 import { api } from '../../lib/api';
 
 interface MedicineSummary {
@@ -59,7 +59,7 @@ export function MedicinesPage() {
                     to={`/medicines/${m.id}`}
                     icon={Pill}
                     title={m.label}
-                    detail={`Generic name: ${m.genericName}${m.isDemo ? ' · fictional record' : ''}`}
+                    detail={`Generic name: ${m.genericName}`}
                     right={<StatusBadge status={m.infoStatus} />}
                   />
                 ))}
@@ -85,7 +85,6 @@ export function MedicineDetailPage() {
           <article className="mt-3">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={m.infoStatus} />
-              {m.isDemo ? <DemoTag /> : null}
             </div>
             <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{m.label}</h1>
             <p className="text-muted">Generic name: {m.genericName}</p>

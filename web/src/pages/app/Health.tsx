@@ -204,7 +204,6 @@ export default function Health() {
                     <p className="mt-1 text-xs text-muted">
                       Source: {t.source}
                       {t.reviewedAt ? ` · reviewed ${t.reviewedAt.slice(0, 10)}` : ''}
-                      {t.isDemo ? ' · fictional demo tip' : ''}
                     </p>
                   </ListItem>
                 ))}

@@ -39,15 +39,16 @@ export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Bool
 // ---------------------------------------------------------------- buttons
 
 type Variant = 'primary' | 'green' | 'outline' | 'ghost' | 'danger' | 'white';
+/** Chunky "3D" buttons: a darker edge under the face that presses down on tap (see .btn-3d). */
 const VARIANT: Record<Variant, string> = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm',
-  green: 'bg-secondary-600 text-white hover:bg-secondary-700 shadow-sm',
-  outline: 'border border-border bg-white text-ink hover:bg-primary-50 hover:border-primary-400',
+  primary: 'btn-3d bg-primary-600 text-white hover:bg-primary-500 [--edge:var(--color-primary-900)]',
+  green: 'btn-3d bg-secondary-600 text-white hover:bg-secondary-teal [--edge:#0e4f22]',
+  outline: 'btn-3d border-2 border-border bg-white text-primary-700 hover:bg-sky [--edge:var(--color-border)]',
   ghost: 'text-primary-700 hover:bg-primary-50',
-  danger: 'bg-danger text-white hover:brightness-95',
-  white: 'bg-white text-primary-700 hover:bg-primary-50 shadow-sm',
+  danger: 'btn-3d bg-danger text-white hover:brightness-95 [--edge:#8e1b1b]',
+  white: 'btn-3d bg-white text-primary-700 hover:bg-primary-50 [--edge:#c9d8ea]',
 };
-const SIZE = { sm: 'h-9 px-3 text-sm rounded-lg', md: 'min-h-11 px-4 text-sm rounded-xl', lg: 'min-h-12 px-5 text-base rounded-xl' };
+const SIZE = { sm: 'min-h-10 px-3.5 text-sm rounded-xl', md: 'min-h-12 px-5 text-[15px] rounded-2xl', lg: 'min-h-14 px-6 text-base rounded-2xl' };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -66,7 +67,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cx(
-        'inline-flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-55',
+        'inline-flex select-none items-center justify-center gap-2 font-brand font-extrabold tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-55',
         VARIANT[variant],
         SIZE[size],
         className,
@@ -81,7 +82,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 
 export function LinkButton({ variant = 'primary', size = 'md', icon: Icon, className, children, ...rest }: LinkProps & { variant?: Variant; size?: keyof typeof SIZE; icon?: LucideIcon }) {
   return (
-    <Link className={cx('inline-flex items-center justify-center gap-2 font-semibold transition-colors', VARIANT[variant], SIZE[size], className)} {...rest}>
+    <Link className={cx('inline-flex select-none items-center justify-center gap-2 font-brand font-extrabold tracking-wide transition-colors', VARIANT[variant], SIZE[size], className)} {...rest}>
       {Icon ? <Icon className="size-4" aria-hidden /> : null}
       {children}
     </Link>
@@ -92,7 +93,7 @@ export function LinkButton({ variant = 'primary', size = 'md', icon: Icon, class
 
 export function Card({ className, children, as: As = 'div', ...rest }: { className?: string; children: ReactNode; as?: 'div' | 'section' | 'article' | 'li' } & Record<string, unknown>) {
   return (
-    <As className={cx('rounded-[var(--radius-card)] border border-border bg-white', className)} {...rest}>
+    <As className={cx('card-3d rounded-[var(--radius-card)] bg-white', className)} {...rest}>
       {children}
     </As>
   );
@@ -101,7 +102,7 @@ export function Card({ className, children, as: As = 'div', ...rest }: { classNa
 /** Grouped list (settings-style rows) — the default way to show a set of items on a phone. */
 export function List({ children, className, label }: { children: ReactNode; className?: string; label?: string }) {
   return (
-    <ul aria-label={label} className={cx('divide-y divide-border overflow-hidden rounded-[var(--radius-card)] border border-border bg-white', className)}>
+    <ul aria-label={label} className={cx('card-3d divide-y-2 divide-slate-100 overflow-hidden rounded-[var(--radius-card)] bg-white', className)}>
       {children}
     </ul>
   );
@@ -124,7 +125,11 @@ export function ListRow({
 }) {
   const body = (
     <>
-      {Icon ? <Icon className={cx('size-5 shrink-0', tone === 'green' ? 'text-secondary-600' : tone === 'muted' ? 'text-muted' : 'text-primary-600')} aria-hidden /> : null}
+      {Icon ? (
+        <span className={cx('grid size-10 shrink-0 place-items-center rounded-xl', tone === 'green' ? 'bg-secondary-50 text-secondary-600' : tone === 'muted' ? 'bg-slate-100 text-muted' : 'bg-primary-50 text-primary-600')}>
+          <Icon className="size-5" aria-hidden />
+        </span>
+      ) : null}
       <span className="min-w-0 flex-1">
         <span className="block font-semibold text-ink">{title}</span>
         {detail ? <span className="block text-sm text-muted">{detail}</span> : null}
@@ -136,11 +141,11 @@ export function ListRow({
   return (
     <li>
       {to ? (
-        <Link to={to} className="flex min-h-14 items-center gap-3 px-4 py-3 hover:bg-slate-50">
+        <Link to={to} className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-sky active:bg-primary-50">
           {body}
         </Link>
       ) : (
-        <div className="flex min-h-14 items-center gap-3 px-4 py-3">{body}</div>
+        <div className="flex min-h-16 items-center gap-3 px-4 py-3">{body}</div>
       )}
     </li>
   );
@@ -160,7 +165,7 @@ export function PageHeader({ title, subtitle, actions, back }: { title: string; 
             <ArrowLeft className="size-4" aria-hidden /> Back
           </Link>
         ) : null}
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{title}</h1>
+        <h1 className="text-[26px] leading-tight text-ink sm:text-[30px]">{title}</h1>
         {subtitle ? <p className="mt-1 max-w-2xl text-sm text-muted">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -171,7 +176,7 @@ export function PageHeader({ title, subtitle, actions, back }: { title: string; 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-2">
-      <h2 className="text-lg font-bold text-ink">{children}</h2>
+      <h2 className="text-lg text-ink">{children}</h2>
       {action}
     </div>
   );
@@ -288,10 +293,13 @@ export function Notice({ tone = 'info', title, children, icon }: { tone?: 'info'
   );
 }
 
-export function Spinner({ label = 'Loading…' }: { label?: string }) {
+/** Branded loader: the MEDIMATE pin with the ripple motif. */
+export function Spinner({ label = 'Loading…', full }: { label?: string; full?: boolean }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted" role="status">
-      <Loader2 className="size-5 animate-spin text-primary-600" aria-hidden />
+    <div className={cx('flex flex-col items-center justify-center gap-4 text-sm font-semibold text-muted', full ? 'min-h-[70dvh]' : 'py-12')} role="status">
+      <span className="pulse-ring relative grid size-16 place-items-center rounded-full bg-white">
+        <img src="/brand/medimate-mark.png" alt="" className="bob size-12 object-contain" />
+      </span>
       {label}
     </div>
   );
@@ -303,11 +311,11 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function EmptyState({ icon: Icon = CircleHelp, title, children, action }: { icon?: LucideIcon; title: string; children?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-white/60 px-6 py-10 text-center">
-      <span className="mb-3 grid size-12 place-items-center rounded-full bg-primary-50 text-primary-600">
-        <Icon className="size-6" aria-hidden />
+    <div className="card-3d flex flex-col items-center rounded-[var(--radius-card)] bg-white px-6 py-10 text-center">
+      <span className="bob mb-4 grid size-16 place-items-center rounded-2xl bg-primary-50 text-primary-600">
+        <Icon className="size-8" aria-hidden />
       </span>
-      <p className="font-semibold text-ink">{title}</p>
+      <p className="font-brand text-lg font-extrabold text-ink">{title}</p>
       {children ? <div className="mt-1 max-w-md text-sm text-muted">{children}</div> : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
@@ -438,8 +446,8 @@ export function Chip({ active, onClick, children, icon: Icon }: { active?: boole
       aria-pressed={active}
       onClick={onClick}
       className={cx(
-        'inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors',
-        active ? 'border-primary-700 bg-primary-700 text-white' : 'border-border bg-white text-ink hover:border-primary-400',
+        'inline-flex min-h-10 shrink-0 select-none items-center gap-1.5 rounded-xl border-2 border-b-4 px-3.5 text-sm font-bold transition-colors active:translate-y-[2px] active:border-b-2',
+        active ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-border bg-white text-ink hover:bg-sky',
       )}
     >
       {Icon ? <Icon className="size-4" aria-hidden /> : null}
@@ -450,7 +458,7 @@ export function Chip({ active, onClick, children, icon: Icon }: { active?: boole
 
 export function Tabs<T extends string>({ value, onChange, items, label }: { value: T; onChange: (v: T) => void; items: { value: T; label: string }[]; label: string }) {
   return (
-    <div role="tablist" aria-label={label} className="inline-flex rounded-xl bg-slate-100 p-1">
+    <div role="tablist" aria-label={label} className="inline-flex rounded-2xl border-2 border-border bg-slate-100 p-1">
       {items.map((it) => (
         <button
           key={it.value}
@@ -458,7 +466,7 @@ export function Tabs<T extends string>({ value, onChange, items, label }: { valu
           type="button"
           aria-selected={value === it.value}
           onClick={() => onChange(it.value)}
-          className={cx('min-h-9 rounded-lg px-3.5 text-sm font-semibold transition-colors', value === it.value ? 'bg-white text-primary-700 shadow-sm' : 'text-muted hover:text-ink')}
+          className={cx('min-h-10 rounded-xl px-4 font-brand text-sm font-extrabold transition-colors', value === it.value ? 'bg-white text-primary-700 shadow-[0_2px_0_var(--color-border)]' : 'text-muted hover:text-ink')}
         >
           {it.label}
         </button>
@@ -483,7 +491,7 @@ export function Dialog({ open, onClose, title, children, footer }: { open: boole
       onClose={onClose}
       onCancel={onClose}
       aria-labelledby="dlg-title"
-      className="m-auto w-[min(92vw,520px)] rounded-2xl border border-border p-0 shadow-2xl backdrop:bg-slate-900/40"
+      className="m-auto w-[min(92vw,520px)] rounded-3xl border-2 border-border p-0 shadow-2xl backdrop:bg-slate-900/50"
     >
       {open ? (
         <div className="p-5">
@@ -492,6 +500,39 @@ export function Dialog({ open, onClose, title, children, footer }: { open: boole
           </h2>
           <div className="mt-3 text-sm text-ink">{children}</div>
           {footer ? <div className="mt-5 flex flex-wrap justify-end gap-2">{footer}</div> : null}
+        </div>
+      ) : null}
+    </dialog>
+  );
+}
+
+/** Bottom sheet on phones (centered dialog on wider screens), used for quick actions. */
+export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (open && !d.open) d.showModal();
+    if (!open && d.open) d.close();
+  }, [open]);
+  return (
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      onCancel={onClose}
+      onClick={(e) => {
+        if (e.target === ref.current) onClose();
+      }}
+      aria-labelledby="sheet-title"
+      className="mx-auto mb-0 mt-auto w-full max-w-lg rounded-t-[28px] border-2 border-b-0 border-border p-0 backdrop:bg-slate-900/50 sm:m-auto sm:rounded-[28px] sm:border-b-2"
+    >
+      {open ? (
+        <div className="slide-up px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3">
+          <span className="mx-auto mb-3 block h-1.5 w-12 rounded-full bg-slate-200 sm:hidden" aria-hidden />
+          <h2 id="sheet-title" className="text-xl text-ink">
+            {title}
+          </h2>
+          <div className="mt-4">{children}</div>
         </div>
       ) : null}
     </dialog>

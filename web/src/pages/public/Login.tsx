@@ -56,7 +56,7 @@ export default function Login() {
   };
 
   // ---- email / Google (Firebase)
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(params.get('mode') === 'signup' ? 'signup' : 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [resetSent, setResetSent] = useState(false);
@@ -91,16 +91,16 @@ export default function Login() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-8 sm:py-12">
-      <div className="flex items-center gap-3">
-        <LogoMark size={44} />
-        <div>
-          <h1 className="text-2xl font-bold">{t('auth.title')}</h1>
-          <p className="text-sm text-muted">{t('auth.lead')}</p>
-        </div>
+      <div className="text-center">
+        <span className="bob inline-grid size-20 place-items-center rounded-3xl bg-white shadow-[0_5px_0_var(--color-border)]">
+          <LogoMark size={60} />
+        </span>
+        <h1 className="mt-4 text-[28px] leading-tight">{mode === 'signup' && method === 'email' ? 'Create your account' : 'Welcome back'}</h1>
+        <p className="mt-1 text-[15px] text-muted">{mode === 'signup' && method === 'email' ? 'It takes a minute. Your first month is free.' : t('auth.lead')}</p>
       </div>
 
       {firebase ? (
-        <div className="mt-6">
+        <div className="mt-6 flex justify-center">
           <Tabs
             label="Sign-in method"
             value={method}
@@ -229,35 +229,39 @@ export default function Login() {
             </form>
           )}
 
-          {config?.demoMode ? (
-            <section className="mt-8" aria-labelledby="demo-h">
-              <h2 id="demo-h" className="text-sm font-bold text-ink">
-                Demo accounts
-              </h2>
-              <p className="text-xs text-muted">Made-up people with fictional numbers. Tap one, then send the code.</p>
-              <ul className="mt-2 divide-y divide-border overflow-hidden rounded-[var(--radius-card)] border border-border bg-white">
-                {DEMO.map(([num, name, role]) => (
-                  <li key={num}>
-                    <button
-                      type="button"
-                      className="flex min-h-12 w-full items-center justify-between gap-3 px-4 text-left hover:bg-slate-50"
-                      onClick={() => {
-                        setPhone(num);
-                        setStep('phone');
-                      }}
-                    >
-                      <span>
-                        <span className="font-semibold">{name}</span> <span className="text-sm text-muted">{role}</span>
-                      </span>
-                      <span className="font-mono text-xs text-muted">{num}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
         </div>
       )}
+
+        {config?.demoMode ? (
+          <details className="card-3d group mt-8 overflow-hidden rounded-[var(--radius-card)] bg-white">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between px-4 font-brand font-extrabold text-ink">
+              Try a demo account
+              <span className="text-sm font-semibold text-muted group-open:hidden">7 people</span>
+            </summary>
+            <p className="px-4 pb-2 text-xs text-muted">Made-up people with fictional numbers. Tap one and the sign-in code appears on screen.</p>
+            <ul className="divide-y-2 divide-slate-100 border-t-2 border-slate-100">
+              {DEMO.map(([num, name, role]) => (
+                <li key={num}>
+                  <button
+                    type="button"
+                    className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left hover:bg-sky"
+                    onClick={() => {
+                      setTab('phone');
+                      setPhone(num);
+                      setCode('');
+                      request.mutate(num);
+                    }}
+                  >
+                    <span>
+                      <span className="font-semibold">{name}</span> <span className="text-sm text-muted">{role}</span>
+                    </span>
+                    <span className="font-mono text-xs text-muted">{num}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
     </div>
   );
 }
