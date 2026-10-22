@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { STOCK_CSV_HEADER, STOCK_STATES, STOCK_STATE_LABELS, WEEKDAY_NAMES } from '@medimate/shared';
-import { FileUp, MessageSquare, Plus, Save, ShieldCheck, Store, Trash2, Upload } from 'lucide-react';
-import { Badge, Button, Card, DemoTag, EmptyState, Field, Input, LinkButton, Notice, PageHeader, QueryView, SectionTitle, Select, StatusBadge, StockBadge, Tabs, Textarea, errorMessage, useToast } from '../../components/ui';
+import { ClipboardList, FileUp, MessageSquare, Plus, Save, ShieldCheck, Store, Trash2, Upload } from 'lucide-react';
+import { Badge, Button, Card, DemoTag, EmptyState, Field, Input, LinkButton, List, ListItem, ListRow, Notice, PageHeader, QueryView, SectionTitle, Select, StatusBadge, StockBadge, Tabs, Textarea, errorMessage, useToast } from '../../components/ui';
 import { api, post, put, del } from '../../lib/api';
 import { dateTime, money } from '../../lib/format';
 
@@ -67,7 +67,7 @@ export function PortalHome() {
                 </>
               }
             />
-            <div className="mb-5 flex flex-wrap gap-2">
+            <div className="-mt-2 mb-5 flex flex-wrap gap-2">
               <StatusBadge status={p.verificationStatus} label={p.verificationStatus === 'approved' ? `Verified${p.verifiedUntil ? ` until ${p.verifiedUntil}` : ''}` : undefined} />
               {p.isDemo ? <DemoTag /> : null}
             </div>
@@ -84,22 +84,47 @@ export function PortalHome() {
       <QueryView query={analytics}>
         {(a) => (
           <>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {[
-                ['Open inquiries', a.inquiries.open ?? 0],
-                ['Answered', a.inquiries.answered ?? 0],
-                ['Median first reply', a.medianFirstReplyMinutes === null ? 'n/a' : `${a.medianFirstReplyMinutes} min`],
-                ['Items listed', a.stock.items],
-                ['Items older than 48 h', a.stock.stale],
-                ['Stock updates (30 days)', a.stock.updatesLast30Days],
-                ['Open reports about you', (a.reports.open ?? 0) + (a.reports.investigating ?? 0)],
-                ['Closed inquiries', a.inquiries.closed ?? 0],
-              ].map(([label, value]) => (
-                <Card key={label as string} className="p-4">
-                  <p className="text-xs text-muted">{label}</p>
-                  <p className="mt-1 text-2xl font-bold">{value}</p>
-                </Card>
-              ))}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <section aria-labelledby="ph-inq-h">
+                <SectionTitle>
+                  <span id="ph-inq-h">Inquiries</span>
+                </SectionTitle>
+                <List label="Inquiries">
+                  <ListRow to="/pharmacy/inbox" icon={MessageSquare} title="Open" right={<strong>{a.inquiries.open ?? 0}</strong>} />
+                  <ListItem className="flex justify-between gap-3 text-sm">
+                    <span>Answered</span>
+                    <strong>{a.inquiries.answered ?? 0}</strong>
+                  </ListItem>
+                  <ListItem className="flex justify-between gap-3 text-sm">
+                    <span>Closed</span>
+                    <strong>{a.inquiries.closed ?? 0}</strong>
+                  </ListItem>
+                  <ListItem className="flex justify-between gap-3 text-sm">
+                    <span>Typical time to first reply</span>
+                    <strong>{a.medianFirstReplyMinutes === null ? 'No replies yet' : `${a.medianFirstReplyMinutes} min`}</strong>
+                  </ListItem>
+                </List>
+              </section>
+              <section aria-labelledby="ph-stock-h">
+                <SectionTitle>
+                  <span id="ph-stock-h">Stock</span>
+                </SectionTitle>
+                <List label="Stock">
+                  <ListRow to="/pharmacy/stock" icon={ClipboardList} title="Items listed" right={<strong>{a.stock.items}</strong>} />
+                  <ListItem className="flex justify-between gap-3 text-sm">
+                    <span>Not updated for over 48 hours</span>
+                    <strong>{a.stock.stale}</strong>
+                  </ListItem>
+                  <ListItem className="flex justify-between gap-3 text-sm">
+                    <span>Updates in the last 30 days</span>
+                    <strong>{a.stock.updatesLast30Days}</strong>
+                  </ListItem>
+                  <ListItem className="flex justify-between gap-3 text-sm">
+                    <span>Open reports about your pharmacy</span>
+                    <strong>{(a.reports.open ?? 0) + (a.reports.investigating ?? 0)}</strong>
+                  </ListItem>
+                </List>
+              </section>
             </div>
             <p className="mt-2 text-xs text-muted">
               Last {a.periodDays} days. {a.source}
@@ -139,11 +164,11 @@ export function StockPage() {
   });
   return (
     <div className="mx-auto max-w-5xl">
-      <PageHeader title="Stock & prices" subtitle="Each update is timestamped. Reports older than 48 hours are shown to patients as possibly out of date." actions={<LinkButton to="/pharmacy/import" variant="outline" icon={Upload}>CSV import</LinkButton>} />
-      <Card className="mb-5 p-5">
+      <PageHeader title="Stock and prices" subtitle="Each update is timestamped. Reports older than 48 hours are shown to patients as possibly out of date. Tap Still correct to confirm an item without changing it." actions={<LinkButton to="/pharmacy/import" variant="outline" icon={Upload}>CSV import</LinkButton>} />
+      <Card className="mb-5 p-4 sm:p-5">
         <SectionTitle>Add or update one item</SectionTitle>
         <form
-          className="grid gap-3 md:grid-cols-[2fr_1fr_1fr_1fr_auto] md:items-end"
+          className="grid grid-cols-2 gap-3 md:grid-cols-[2fr_1fr_1fr_1fr_auto] md:items-end [&>*:first-child]:col-span-2 md:[&>*:first-child]:col-span-1 [&>button]:col-span-2 md:[&>button]:col-span-1"
           onSubmit={(e) => {
             e.preventDefault();
             save.mutate({ medicineId, price: price === '' ? null : Number(price), stockState: state, quantity: qty === '' ? null : Number(qty) });
@@ -188,42 +213,29 @@ export function StockPage() {
           d.items.length === 0 ? (
             <EmptyState icon={Store} title="No stock listed yet" />
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-border bg-white">
-              <table className="w-full min-w-[640px] text-sm">
-                <caption className="sr-only">Your stock</caption>
-                <thead className="bg-slate-50 text-left text-xs text-muted">
-                  <tr>
-                    <th className="px-4 py-2.5">Medicine</th>
-                    <th className="px-4 py-2.5">Price</th>
-                    <th className="px-4 py-2.5">Stock</th>
-                    <th className="px-4 py-2.5">Updated</th>
-                    <th className="px-4 py-2.5">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {d.items.map((s) => (
-                    <tr key={s.id} className="border-t border-border">
-                      <td className="px-4 py-2.5 font-semibold">{s.medicine.label}</td>
-                      <td className="px-4 py-2.5">{money(s.price, s.currency)}</td>
-                      <td className="px-4 py-2.5">
-                        <StockBadge state={s.stockState} stale={s.stale} />
-                      </td>
-                      <td className="px-4 py-2.5 text-muted">{s.ageLabel}</td>
-                      <td className="px-4 py-2.5 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="outline" onClick={() => save.mutate({ medicineId: s.medicine.id, price: s.price, stockState: s.stockState, quantity: s.quantity })}>
-                            Confirm still correct
-                          </Button>
-                          <Button size="sm" variant="ghost" icon={Trash2} aria-label={`Remove ${s.medicine.label}`} onClick={() => confirm('Remove this item?') && remove.mutate(s.id)} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <List label="Your stock">
+              {d.items.map((s) => (
+                <ListItem key={s.id} className="sm:flex sm:items-center sm:justify-between sm:gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-semibold">{s.medicine.label}</p>
+                      <p className="shrink-0 font-bold sm:hidden">{money(s.price, s.currency)}</p>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <StockBadge state={s.stockState} stale={s.stale} />
+                      <span className="text-xs text-muted">Updated {s.ageLabel}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 sm:mt-0">
+                    <p className="hidden w-28 text-right font-bold sm:block">{money(s.price, s.currency)}</p>
+                    <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => save.mutate({ medicineId: s.medicine.id, price: s.price, stockState: s.stockState, quantity: s.quantity })}>
+                      Still correct
+                    </Button>
+                    <Button size="sm" variant="ghost" icon={Trash2} aria-label={`Remove ${s.medicine.label}`} onClick={() => confirm('Remove this item?') && remove.mutate(s.id)} />
+                  </div>
+                </ListItem>
+              ))}
+            </List>
           )
         }
       </QueryView>
@@ -269,8 +281,8 @@ export function ImportPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader title="CSV import" subtitle="Upload many items at once. You see a preview first; nothing changes until every row is valid and you confirm." />
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card className="p-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card className="p-4 sm:p-5">
           <SectionTitle>1. Choose or paste a file</SectionTitle>
           <p className="text-xs text-muted">
             Columns: <code className="font-mono">{STOCK_CSV_HEADER.join(',')}</code>. stock_state: in stock, low, out or unknown.
@@ -286,7 +298,7 @@ export function ImportPage() {
           </Button>
           {preview.isError ? <div className="mt-3"><Notice tone="danger">{errorMessage(preview.error)}</Notice></div> : null}
         </Card>
-        <Card className="p-5">
+        <Card className="p-4 sm:p-5">
           <SectionTitle>Preview</SectionTitle>
           {!result ? (
             <p className="text-sm text-muted">Run a preview to see what will change.</p>
@@ -353,7 +365,7 @@ export function InboxPage() {
   const [status, setStatus] = useState<'all' | 'open' | 'answered' | 'closed'>('open');
   const q = useQuery({ queryKey: ['pharmacy', 'inbox', status], queryFn: () => api<{ items: InboxRow[] }>(`/pharmacy/inbox${status === 'all' ? '' : `?status=${status}`}`) });
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-3xl">
       <PageHeader title="Inquiries" subtitle="Questions from patients by web, SMS and USSD. You never see their health records." />
       <Tabs
         label="Filter"
@@ -372,24 +384,27 @@ export function InboxPage() {
             d.items.length === 0 ? (
               <EmptyState icon={MessageSquare} title="Nothing here" />
             ) : (
-              <ul className="grid gap-2">
+              <List label="Inquiries">
                 {d.items.map((i) => (
-                  <li key={i.id}>
-                    <Link to={`/pharmacy/inbox/${i.id}`}>
-                      <Card className="flex items-center justify-between gap-3 p-4 hover:border-primary-400">
-                        <div className="min-w-0">
-                          <p className="truncate font-bold">{i.subject}</p>
-                          <p className="text-sm text-muted">
-                            {i.patient.displayName} · {i.patient.phone} · via {i.channel}
-                          </p>
-                          <p className="text-xs text-muted">{dateTime(i.updatedAt)}</p>
-                        </div>
-                        <StatusBadge status={i.status} />
-                      </Card>
-                    </Link>
-                  </li>
+                  <ListRow
+                    key={i.id}
+                    to={`/pharmacy/inbox/${i.id}`}
+                    icon={MessageSquare}
+                    title={i.subject}
+                    detail={
+                      <>
+                        <span className="block">
+                          {i.patient.displayName} · {i.patient.phone}
+                        </span>
+                        <span className="block text-xs">
+                          {dateTime(i.updatedAt)} · by {i.channel}
+                        </span>
+                      </>
+                    }
+                    right={<StatusBadge status={i.status} />}
+                  />
                 ))}
-              </ul>
+              </List>
             )
           }
         </QueryView>
@@ -432,8 +447,8 @@ function ProfileForm({ initial, onSubmit, submitting, label }: { initial: Partia
           {[1, 2, 3, 4, 5, 6, 0].map((d) => {
             const h = byDay.get(d);
             return (
-              <div key={d} className="flex flex-wrap items-center gap-2 text-sm">
-                <label className="flex w-36 items-center gap-2">
+              <div key={d} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                <label className="flex min-h-10 w-32 items-center gap-2">
                   <input
                     type="checkbox"
                     className="size-4"
@@ -444,9 +459,9 @@ function ProfileForm({ initial, onSubmit, submitting, label }: { initial: Partia
                 </label>
                 {h ? (
                   <>
-                    <Input type="time" aria-label={`${WEEKDAY_NAMES[d]} opens`} className="!min-h-10 w-32" value={h.opens} onChange={(e) => setHours((s) => s.map((x) => (x.weekday === d ? { ...x, opens: e.target.value } : x)))} />
+                    <Input type="time" aria-label={`${WEEKDAY_NAMES[d]} opens`} className="!min-h-10 w-[7.5rem]" value={h.opens} onChange={(e) => setHours((s) => s.map((x) => (x.weekday === d ? { ...x, opens: e.target.value } : x)))} />
                     <span>to</span>
-                    <Input type="time" aria-label={`${WEEKDAY_NAMES[d]} closes`} className="!min-h-10 w-32" value={h.closes} onChange={(e) => setHours((s) => s.map((x) => (x.weekday === d ? { ...x, closes: e.target.value } : x)))} />
+                    <Input type="time" aria-label={`${WEEKDAY_NAMES[d]} closes`} className="!min-h-10 w-[7.5rem]" value={h.closes} onChange={(e) => setHours((s) => s.map((x) => (x.weekday === d ? { ...x, closes: e.target.value } : x)))} />
                   </>
                 ) : (
                   <span className="text-muted">Closed</span>
@@ -487,15 +502,15 @@ export function ProfilePage() {
   });
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader title="Profile & verification" />
+      <PageHeader title="Profile and verification" />
       <QueryView query={profile}>
         {(p) => (
           <div className="grid gap-5">
-            <Card className="p-5">
+            <Card className="p-4 sm:p-5">
               <SectionTitle>Public profile</SectionTitle>
               <ProfileForm initial={p} submitting={save.isPending} label="Save profile" onSubmit={(v) => save.mutate(v)} />
             </Card>
-            <Card className="p-5">
+            <Card className="p-4 sm:p-5">
               <SectionTitle>
                 <span className="flex items-center gap-2">
                   <ShieldCheck className="size-5 text-secondary-600" aria-hidden /> Verification
@@ -561,7 +576,7 @@ export function RegisterPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader title="Register a pharmacy" subtitle="Your pharmacy starts as a draft. It becomes visible to the public only after an administrator verifies it." />
-      <Card className="p-5">
+      <Card className="p-4 sm:p-5">
         <ProfileForm initial={{}} submitting={m.isPending} label="Create pharmacy profile" onSubmit={(v) => m.mutate(v)} />
         {m.isError ? <div className="mt-3"><Notice tone="danger">{errorMessage(m.error)}</Notice></div> : null}
       </Card>

@@ -43,9 +43,9 @@ const USSD_SCRIPTS: Record<string, string[]> = {
 
 function KeypadPhone({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <div className="mx-auto w-full max-w-[300px] rounded-[34px] border-[5px] border-slate-700 bg-slate-800 p-4 shadow-2xl">
+    <div className="mx-auto w-full max-w-[300px] rounded-[34px] border-[5px] border-slate-700 bg-slate-800 p-4">
       <p className="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
-      <div className="min-h-[260px] rounded-xl bg-[#c9e3c4] p-3 font-mono text-[13px] leading-snug text-slate-900 shadow-inner">{children}</div>
+      <div className="min-h-[260px] rounded-xl bg-[#c9e3c4] p-3 font-mono text-[13px] leading-snug text-slate-900">{children}</div>
     </div>
   );
 }
@@ -54,7 +54,7 @@ function SmsSim({ phone }: { phone: string }) {
   const qc = useQueryClient();
   const toast = useToast();
   const [text, setText] = useState('');
-  const endRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   const thread = useQuery({ queryKey: ['sim-thread', phone], queryFn: () => api<ThreadResp>(`/sim/sms/thread?phone=${encodeURIComponent(phone)}`), refetchInterval: 8000 });
   const send = useMutation({
     mutationFn: (t: string) => post<{ replies: string[] }>('/sim/sms', { phone, text: t }),
@@ -72,17 +72,20 @@ function SmsSim({ phone }: { phone: string }) {
       void qc.invalidateQueries({ queryKey: ['sim-thread', phone] });
     },
   });
-  useEffect(() => endRef.current?.scrollIntoView({ block: 'end' }), [thread.data?.messages.length]);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (box) box.scrollTop = box.scrollHeight;
+  }, [thread.data?.messages.length]);
 
   const runScript = async (cmds: string[]) => {
     for (const c of cmds) await send.mutateAsync(c).catch(() => undefined);
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
       <div>
         <KeypadPhone label="Basic phone · SMS">
-          <div className="max-h-[340px] space-y-2 overflow-y-auto pr-1" aria-live="polite">
+          <div ref={boxRef} className="max-h-[340px] space-y-2 overflow-y-auto pr-1" aria-live="polite">
             {(thread.data?.messages ?? []).length === 0 ? <p className="text-slate-600">No messages yet. Send HELP or JOIN.</p> : null}
             {thread.data?.messages.map((m) => (
               <div key={m.id} className={m.direction === 'in' ? 'text-right' : ''}>
@@ -94,7 +97,6 @@ function SmsSim({ phone }: { phone: string }) {
                 </p>
               </div>
             ))}
-            <div ref={endRef} />
           </div>
         </KeypadPhone>
         <form
@@ -113,7 +115,7 @@ function SmsSim({ phone }: { phone: string }) {
       <div className="space-y-4">
         <Card className="p-4">
           <p className="text-sm font-bold">Quick commands</p>
-          <div className="scrollbar-none mt-2 flex flex-wrap gap-2">
+          <div className="scrollbar-none -mx-4 mt-2 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
             {['HELP', 'JOIN', 'YES', 'FIND paracetamol, Molyko', 'PRICE paracetamol 500', 'INFO paracetamol 500', 'MORE', 'TAKEN', 'SKIP', 'WATER 500ML', 'STEPS 3000', 'BP 120/80', 'SUGAR 5.6 MMOL', 'CONTACT MOL1 Do you have ORS?', 'LANG FR', 'LANG EN', 'STOP', 'START'].map((c) => (
               <Chip key={c} onClick={() => send.mutate(c)}>
                 <span className="font-mono text-xs">{c}</span>
@@ -197,7 +199,7 @@ function UssdSim({ phone }: { phone: string }) {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
       <div>
         <KeypadPhone label={`USSD · ${config?.ussdCode ?? '*123#'} (placeholder)`}>
           {screen ? (
@@ -286,10 +288,10 @@ export default function Simulator() {
     );
   }
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">SMS &amp; USSD simulator</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">SMS and USSD simulator</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted">Try MEDIMATE the way someone with a basic phone would. The same accounts and data are used as on the web.</p>
         </div>
         <Badge tone="amber" icon={Hash}>
@@ -301,7 +303,7 @@ export default function Simulator() {
           Messages are processed by the real MEDIMATE command engine but delivered only to this page. {config?.publicDemo ? 'The public demo accepts fictional numbers +237 600 xxx xxx only.' : ''}
         </Notice>
       </div>
-      <div className="mt-5 flex flex-wrap items-end gap-3">
+      <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <Tabs
           label="Channel"
           value={tab}
@@ -311,7 +313,7 @@ export default function Simulator() {
             { value: 'ussd', label: 'USSD' },
           ]}
         />
-        <div className="w-full max-w-xs">
+        <div className="w-full sm:max-w-xs">
           <Field label="Phone number">
             {(id) => (
               <Select id={id} value={PHONES.some(([n]) => n === phone) ? phone : 'custom'} onChange={(e) => e.target.value !== 'custom' && setPhone(e.target.value)}>
@@ -326,13 +328,13 @@ export default function Simulator() {
           </Field>
         </div>
         <form
-          className="flex items-end gap-2"
+          className="flex items-end gap-2 [&>div]:flex-1 sm:[&>div]:flex-none"
           onSubmit={(e) => {
             e.preventDefault();
             if (custom.trim()) setPhone(custom.trim());
           }}
         >
-          <Field label="Or type a number">{(id) => <Input id={id} value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="600 000 123" className="w-40" />}</Field>
+          <Field label="Or type a number">{(id) => <Input id={id} value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="600 000 123" className="w-full sm:w-40" />}</Field>
           <Button type="submit" variant="outline">
             Use
           </Button>

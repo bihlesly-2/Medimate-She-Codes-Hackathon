@@ -95,7 +95,7 @@ export function normalizeVital(input: VitalInput): VitalResult {
     value2 = round(input.value2, 0);
     value = round(value, 0);
     if (value2 < DIASTOLIC_PLAUSIBLE[0] || value2 > DIASTOLIC_PLAUSIBLE[1] || value2 >= value) {
-      return { ok: false, error: 'Please check the two numbers — the first is usually the larger one.' };
+      return { ok: false, error: 'Please check the two numbers. The first is usually the larger one.' };
     }
   }
   if (type === 'heart_rate') value = round(value, 0);

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarCheck, Download, FileText, HeartPulse, Pill, Plus, Stethoscope, Trash2, TriangleAlert } from 'lucide-react';
 import { HealthDisclaimer } from '../../components/layout';
-import { Badge, Button, Card, Chip, EmptyState, Field, Input, Notice, PageHeader, QueryView, SectionTitle, Select, StatusBadge, Textarea, Toggle, errorMessage, useToast } from '../../components/ui';
+import { Badge, Button, Card, Chip, EmptyState, Field, Input, List, ListItem, Notice, PageHeader, QueryView, SectionTitle, Select, StatusBadge, Textarea, Toggle, errorMessage, useToast } from '../../components/ui';
 import { ApiError, api, del, patch, post } from '../../lib/api';
 import { useMe } from '../../lib/auth';
 import { dateTime } from '../../lib/format';
@@ -106,52 +106,52 @@ export default function History() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader title="History" subtitle="Everything you recorded, in one timeline. Download a summary to show your clinician." />
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
         <section aria-labelledby="tl-h">
           <SectionTitle>
             <span id="tl-h">Timeline</span>
           </SectionTitle>
-          <div className="mb-3 flex flex-wrap items-end gap-2">
+          <div className="scrollbar-none -mx-4 mb-3 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Show only">
             {(['reminder', 'vital', 'checkup', 'reaction'] as const).map((t) => (
               <Chip key={t} active={types.includes(t)} onClick={() => setTypes((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]))}>
                 {t === 'reminder' ? 'Medicines' : t === 'vital' ? 'Readings' : t === 'checkup' ? 'Checkups' : 'Reactions'}
               </Chip>
             ))}
-            <Field label="From">{(id) => <Input id={id} type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="!min-h-10 w-40" />}</Field>
-            <Field label="To">{(id) => <Input id={id} type="date" value={to} onChange={(e) => setTo(e.target.value)} className="!min-h-10 w-40" />}</Field>
+          </div>
+          <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-sm">
+            <Field label="From">{(id) => <Input id={id} type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="!min-h-10" />}</Field>
+            <Field label="To">{(id) => <Input id={id} type="date" value={to} onChange={(e) => setTo(e.target.value)} className="!min-h-10" />}</Field>
           </div>
           <QueryView query={timeline}>
             {(d) =>
               d.items.length === 0 ? (
                 <EmptyState icon={FileText} title="Nothing in this period" />
               ) : (
-                <ol className="relative grid gap-2 border-l-2 border-primary-100 pl-5">
+                <List label="Timeline">
                   {d.items.map((it, i) => {
                     const Icon = ICON[it.type];
                     return (
-                      <li key={i} className="relative">
-                        <span className="absolute -left-[31px] top-3 grid size-6 place-items-center rounded-full bg-white text-primary-600 ring-2 ring-primary-100">
-                          <Icon className="size-3.5" aria-hidden />
-                        </span>
-                        <Card className="p-3">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
+                      <ListItem key={i} className="flex items-start gap-3">
+                        <Icon className="mt-0.5 size-5 shrink-0 text-primary-600" aria-hidden />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                             <p className="font-semibold">{it.title}</p>
                             {it.status ? it.type === 'reaction' ? <Badge>{it.status}</Badge> : <StatusBadge status={it.status === 'upcoming' ? 'scheduled' : it.status === 'done' ? 'taken' : it.status} label={it.status === 'upcoming' ? 'Upcoming' : it.status === 'done' ? 'Done' : undefined} /> : null}
                           </div>
                           {it.detail ? <p className="text-sm text-muted">{it.detail}</p> : null}
                           <p className="text-xs text-muted">{dateTime(it.at, tz)}</p>
-                        </Card>
-                      </li>
+                        </div>
+                      </ListItem>
                     );
                   })}
-                </ol>
+                </List>
               )
             }
           </QueryView>
         </section>
 
         <div className="grid h-fit gap-5">
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <SectionTitle>
               <span className="flex items-center gap-2">
                 <Download className="size-5 text-primary-600" aria-hidden /> Summary for my clinician
@@ -185,7 +185,7 @@ export default function History() {
             </Button>
           </Card>
 
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <SectionTitle>
               <span className="flex items-center gap-2">
                 <Stethoscope className="size-5 text-primary-600" aria-hidden /> Log a reaction
@@ -209,7 +209,7 @@ export default function History() {
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <Field label="How it felt to you">
                   {(id) => (
                     <Select id={id} value={severity} onChange={(e) => setSeverity(e.target.value)}>

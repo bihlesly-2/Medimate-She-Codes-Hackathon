@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MessageSquare, Phone, Search, Send } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, LinkButton, PageHeader, QueryView, StatusBadge, Textarea, cx, errorMessage, useToast } from '../../components/ui';
+import { Badge, Button, Card, EmptyState, LinkButton, List, ListRow, PageHeader, QueryView, StatusBadge, Textarea, cx, errorMessage, useToast } from '../../components/ui';
 import { api, post } from '../../lib/api';
 import { dateTime } from '../../lib/format';
 import type { Thread } from '../../lib/types';
@@ -34,24 +34,25 @@ export function MessagesPage() {
           d.items.length === 0 ? (
             <EmptyState icon={MessageSquare} title="No conversations yet" action={<LinkButton to="/find">Find a pharmacy</LinkButton>} />
           ) : (
-            <ul className="grid gap-2">
+            <List label="Conversations">
               {d.items.map((i) => (
-                <li key={i.id}>
-                  <Link to={`/app/messages/${i.id}`}>
-                    <Card className="flex items-center justify-between gap-3 p-4 transition-colors hover:border-primary-400">
-                      <div className="min-w-0">
-                        <p className="truncate font-bold">{i.pharmacy.name}</p>
-                        <p className="truncate text-sm text-muted">{i.subject}</p>
-                        <p className="text-xs text-muted">
-                          {dateTime(i.updatedAt)} · via {i.channel}
-                        </p>
-                      </div>
-                      <StatusBadge status={i.status} />
-                    </Card>
-                  </Link>
-                </li>
+                <ListRow
+                  key={i.id}
+                  to={`/app/messages/${i.id}`}
+                  icon={MessageSquare}
+                  title={i.pharmacy.name}
+                  detail={
+                    <>
+                      <span className="block truncate">{i.subject}</span>
+                      <span className="block text-xs">
+                        {dateTime(i.updatedAt)} · by {i.channel}
+                      </span>
+                    </>
+                  }
+                  right={<StatusBadge status={i.status} />}
+                />
               ))}
-            </ul>
+            </List>
           )
         }
       </QueryView>
@@ -67,7 +68,7 @@ export function ThreadPage() {
   const qc = useQueryClient();
   const toast = useToast();
   const [body, setBody] = useState('');
-  const endRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLOListElement>(null);
   const q = useQuery({ queryKey: ['thread', id], queryFn: () => api<Thread>(`/inquiries/${id}`), refetchInterval: 15000 });
   const send = useMutation({
     mutationFn: () => post<Thread>(`/inquiries/${id}/messages`, { body }),
@@ -83,7 +84,10 @@ export function ThreadPage() {
     mutationFn: () => post<Thread>(`/inquiries/${id}/close`),
     onSuccess: (t) => qc.setQueryData(['thread', id], t),
   });
-  useEffect(() => endRef.current?.scrollIntoView({ block: 'end' }), [q.data?.messages.length]);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (box) box.scrollTop = box.scrollHeight;
+  }, [q.data?.messages.length]);
   return (
     <div className="mx-auto max-w-3xl">
       <QueryView query={q}>
@@ -110,16 +114,16 @@ export function ThreadPage() {
             />
             <div className="mb-3 flex flex-wrap gap-2">
               <StatusBadge status={t.status} />
-              <Badge>Started via {t.channel}</Badge>
-              {inPortal && t.channel !== 'web' ? <Badge tone="amber">Your reply is sent to the patient by SMS{''}</Badge> : null}
+              <Badge>Started by {t.channel}</Badge>
+              {inPortal && t.channel !== 'web' ? <Badge tone="amber">Your reply is sent to the patient by SMS</Badge> : null}
             </div>
-            <Card className="p-4">
-              <ol className="grid max-h-[55vh] gap-3 overflow-y-auto" aria-live="polite">
+            <Card className="p-3 sm:p-4">
+              <ol ref={boxRef} className="grid max-h-[55vh] gap-3 overflow-y-auto" aria-live="polite">
                 {t.messages.map((m) => {
                   const mine = (m.senderRole === 'pharmacy') === (t.viewerRole === 'pharmacy');
                   return (
                     <li key={m.id} className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
-                      <div className={cx('max-w-[80%] rounded-2xl px-4 py-2.5 text-sm', mine ? 'rounded-br-md bg-primary-600 text-white' : 'rounded-bl-md bg-slate-100 text-ink')}>
+                      <div className={cx('max-w-[85%] rounded-2xl px-4 py-2.5 text-sm', mine ? 'rounded-br-md bg-primary-600 text-white' : 'rounded-bl-md bg-slate-100 text-ink')}>
                         <p className="whitespace-pre-line">{m.body}</p>
                         <p className={cx('mt-1 text-[10px]', mine ? 'text-white/75' : 'text-muted')}>
                           {m.senderRole === 'pharmacy' ? t.pharmacy.name : t.patient.displayName} · {dateTime(m.createdAt)} · {m.channel}
@@ -128,7 +132,6 @@ export function ThreadPage() {
                     </li>
                   );
                 })}
-                <div ref={endRef} />
               </ol>
               {t.status !== 'closed' ? (
                 <form

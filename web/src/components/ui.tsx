@@ -146,6 +146,11 @@ export function ListRow({
   );
 }
 
+/** A row inside a <List> with free-form content: stacked text on a phone, actions below or to the right. */
+export function ListItem({ children, className }: { children: ReactNode; className?: string }) {
+  return <li className={cx('px-4 py-3', className)}>{children}</li>;
+}
+
 export function PageHeader({ title, subtitle, actions, back }: { title: string; subtitle?: ReactNode; actions?: ReactNode; back?: string }) {
   return (
     <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -518,7 +523,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={cx(
-              'fade-up pointer-events-auto flex max-w-md items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-lg',
+              'fade-in pointer-events-auto flex max-w-md items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-lg',
               t.tone === 'error' ? 'bg-danger text-white' : t.tone === 'info' ? 'bg-ink text-white' : 'bg-secondary-700 text-white',
             )}
           >

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PREMIUM_FEATURES, ROLES } from '@medimate/shared';
 import { Check, Flag, HeartPulse, Pencil, Pill, Plus, ShieldCheck, X } from 'lucide-react';
-import { Badge, Button, Card, Chip, DemoTag, Dialog, EmptyState, Field, Input, Notice, PageHeader, QueryView, SectionTitle, Select, StatusBadge, Tabs, Textarea, Toggle, errorMessage, useToast } from '../../components/ui';
+import { Badge, Button, Card, Chip, DemoTag, Dialog, EmptyState, Field, Input, List, ListItem, ListRow, Notice, PageHeader, QueryView, SectionTitle, Select, StatusBadge, Tabs, Textarea, Toggle, errorMessage, useToast } from '../../components/ui';
 import { api, post, put } from '../../lib/api';
 import { hasRole, useMe } from '../../lib/auth';
 import { dateTime } from '../../lib/format';
@@ -18,29 +17,23 @@ export function AdminHome() {
   const q = useQuery({ queryKey: ['admin', 'overview'], queryFn: () => api<Record<string, number>>('/admin/overview') });
   const isAdmin = hasRole(me, 'admin');
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-3xl">
       <PageHeader title={isAdmin ? 'Admin' : 'Clinical review'} subtitle="Work waiting for a decision. Counts come straight from the database." />
       <QueryView query={q}>
         {(o) => (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <List label="Waiting for a decision">
             {[
               { to: '/admin/pharmacies', label: 'Pharmacies waiting for verification', n: o.pharmaciesPending, icon: ShieldCheck, admin: true },
-              { to: '/admin/reports', label: 'Open stock / pharmacy reports', n: o.reportsOpen, icon: Flag, admin: true },
+              { to: '/admin/reports', label: 'Open reports about stock or pharmacies', n: o.reportsOpen, icon: Flag, admin: true },
               { to: '/admin/medicines', label: 'Medicine records in review', n: o.medicinesInReview, icon: Pill },
               { to: '/admin/tips', label: 'Health tips in review', n: o.tipsInReview, icon: HeartPulse },
               { to: '/admin/pharmacies', label: 'Verified pharmacies', n: o.pharmaciesApproved, icon: ShieldCheck, admin: true },
             ]
               .filter((c) => isAdmin || !c.admin)
               .map((c) => (
-                <Link key={c.label} to={c.to}>
-                  <Card className="p-5 transition-colors hover:border-primary-400">
-                    <c.icon className="size-5 text-primary-600" aria-hidden />
-                    <p className="mt-2 text-3xl font-extrabold">{c.n}</p>
-                    <p className="text-sm text-muted">{c.label}</p>
-                  </Card>
-                </Link>
+                <ListRow key={c.label} to={c.to} icon={c.icon} title={c.label} right={<strong className="text-lg">{c.n}</strong>} />
               ))}
-          </div>
+          </List>
         )}
       </QueryView>
     </div>
@@ -90,11 +83,11 @@ export function AdminPharmacies() {
             d.items.length === 0 ? (
               <EmptyState icon={ShieldCheck} title="Nothing to review" />
             ) : (
-              <ul className="grid gap-3">
+              <List label="Pharmacies">
                 {d.items.map((p) => (
-                  <Card as="li" key={p.id} className="p-5">
+                  <ListItem key={p.id} className="!py-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-lg font-bold">
                           {p.name} <span className="font-mono text-sm text-muted">{p.code}</span>
                         </p>
@@ -111,18 +104,18 @@ export function AdminPharmacies() {
                         Decide
                       </Button>
                     </div>
-                    <ol className="mt-3 grid gap-1 border-l-2 border-primary-100 pl-3 text-xs">
+                    <ol className="mt-3 grid gap-1 text-xs text-muted">
                       {p.history.map((h, i) => (
                         <li key={i}>
-                          <strong>{h.status}</strong> · {dateTime(h.createdAt)}
+                          <strong className="text-ink">{h.status}</strong> · {dateTime(h.createdAt)}
                           {h.licenceNumber ? ` · licence ${h.licenceNumber} · ${h.documentReference}` : ''}
                           {h.notes ? ` · ${h.notes}` : ''}
                         </li>
                       ))}
                     </ol>
-                  </Card>
+                  </ListItem>
                 ))}
-              </ul>
+              </List>
             )
           }
         </QueryView>
@@ -311,10 +304,10 @@ export function AdminMedicines() {
       />
       <QueryView query={q}>
         {(d) => (
-          <ul className="grid gap-2">
+          <List label="Medicines">
             {d.items.map((m) => (
-              <Card as="li" key={m.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div>
+              <ListItem key={m.id} className="sm:flex sm:items-center sm:justify-between sm:gap-4">
+                <div className="min-w-0">
                   <p className="font-bold">{m.label}</p>
                   <p className="text-xs text-muted">
                     {m.content.sourceAuthority ? `Source: ${m.content.sourceAuthority} (${m.content.sourceVersionDate ?? 'no date'})` : 'No source recorded'}
@@ -325,7 +318,7 @@ export function AdminMedicines() {
                     {m.isDemo ? <DemoTag /> : null}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="mt-3 flex gap-2 sm:mt-0">
                   <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(m)}>
                     Edit
                   </Button>
@@ -335,9 +328,9 @@ export function AdminMedicines() {
                     </Button>
                   ) : null}
                 </div>
-              </Card>
+              </ListItem>
             ))}
-          </ul>
+          </List>
         )}
       </QueryView>
       {editing ? <MedicineEditor m={editing === 'new' ? null : editing} onClose={() => setEditing(null)} /> : null}
@@ -376,12 +369,12 @@ export function AdminTips() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader title="Health tips" subtitle="Only tips approved by a reviewer other than the author are published. Tips are general information, never personal clinical advice." />
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
         <QueryView query={q}>
           {(d) => (
-            <ul className="grid gap-2">
+            <List label="Health tips">
               {d.items.map((t) => (
-                <Card as="li" key={t.id} className="p-4">
+                <ListItem key={t.id}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-bold">{t.title}</p>
@@ -408,12 +401,12 @@ export function AdminTips() {
                       ) : null}
                     </div>
                   </div>
-                </Card>
+                </ListItem>
               ))}
-            </ul>
+            </List>
           )}
         </QueryView>
-        <Card className="h-fit p-5">
+        <Card className="p-4 sm:p-5">
           <SectionTitle>Write a tip</SectionTitle>
           <form
             className="grid gap-3"
@@ -462,32 +455,42 @@ export function AdminReports() {
           d.items.length === 0 ? (
             <EmptyState icon={Flag} title="No reports" />
           ) : (
-            <ul className="grid gap-3">
+            <List label="Reports">
               {d.items.map((r) => (
-                <Card as="li" key={r.id} className="p-4">
+                <ListItem key={r.id} className="!py-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-bold">
                       {r.pharmacy.name} <span className="font-mono text-xs text-muted">{r.pharmacy.code}</span>
                     </p>
                     <StatusBadge status={r.status} />
                   </div>
-                  <p className="text-sm">
+                  <p className="mt-1 text-sm">
                     <Badge>{r.reason.replace('_', ' ')}</Badge> {r.details}
                   </p>
                   <p className="text-xs text-muted">{dateTime(r.createdAt)}{r.resolutionNote ? ` · ${r.resolutionNote}` : ''}</p>
                   {r.status === 'open' || r.status === 'investigating' ? (
-                    <div className="mt-3 flex flex-wrap items-end gap-2">
-                      <Field label="Note">{(id) => <Input id={id} value={note[r.id] ?? ''} onChange={(e) => setNote({ ...note, [r.id]: e.target.value })} className="w-72" />}</Field>
-                      {['investigating', 'resolved', 'dismissed'].map((s) => (
-                        <Button key={s} size="sm" variant="outline" disabled={(note[r.id] ?? '').trim().length < 3} onClick={() => resolve.mutate({ id: r.id, status: s })}>
-                          {s}
-                        </Button>
-                      ))}
+                    <div className="mt-3 grid gap-2">
+                      <Field label="Note" hint="Required, at least 3 characters.">
+                        {(id, d) => <Input id={id} aria-describedby={d} value={note[r.id] ?? ''} onChange={(e) => setNote({ ...note, [r.id]: e.target.value })} />}
+                      </Field>
+                      <div className="grid grid-cols-3 gap-2 sm:flex">
+                        {(
+                          [
+                            ['investigating', 'Investigating'],
+                            ['resolved', 'Resolved'],
+                            ['dismissed', 'Dismiss'],
+                          ] as const
+                        ).map(([status, label]) => (
+                          <Button key={status} size="sm" variant="outline" disabled={(note[r.id] ?? '').trim().length < 3} onClick={() => resolve.mutate({ id: r.id, status })}>
+                            {label}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   ) : null}
-                </Card>
+                </ListItem>
               ))}
-            </ul>
+            </List>
           )
         }
       </QueryView>
@@ -510,15 +513,15 @@ export function AdminUsers() {
   });
   return (
     <div className="mx-auto max-w-5xl">
-      <PageHeader title="Users & roles" subtitle="Phone numbers are masked. Role changes are recorded in the audit log." />
-      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or number" aria-label="Search users" className="mb-4 max-w-sm" />
+      <PageHeader title="Users and roles" subtitle="Phone numbers are masked. Role changes are recorded in the audit log." />
+      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or number" aria-label="Search users" className="mb-4 sm:max-w-sm" />
       <QueryView query={q}>
         {(d) => (
-          <ul className="grid gap-2">
+          <List label="Users">
             {d.items.map((u) => (
-              <Card as="li" key={u.id} className="p-4">
+              <ListItem key={u.id}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-bold">
                       {u.displayName ?? 'No name'} <span className="font-mono text-xs text-muted">{u.phone ?? u.email ?? ''}</span>
                     </p>
@@ -529,16 +532,16 @@ export function AdminUsers() {
                   </div>
                   {u.isDemo ? <DemoTag /> : null}
                 </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label={`Roles for ${u.displayName ?? 'this user'}`}>
                   {ROLES.map((r) => (
                     <Chip key={r} active={u.roles.includes(r)} onClick={() => role.mutate({ id: u.id, role: r, grant: !u.roles.includes(r) })}>
                       {r}
                     </Chip>
                   ))}
                 </div>
-              </Card>
+              </ListItem>
             ))}
-          </ul>
+          </List>
         )}
       </QueryView>
     </div>
@@ -571,7 +574,7 @@ export function AdminSettings() {
   });
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Trial & settings" />
+      <PageHeader title="Trial and settings" />
       {s ? (
         <form
           className="grid gap-5"
@@ -580,20 +583,20 @@ export function AdminSettings() {
             save.mutate();
           }}
         >
-          <Card className="grid gap-4 p-5 sm:grid-cols-3">
+          <Card className="grid gap-4 p-4 sm:grid-cols-3 sm:p-5">
             <Field label="Trial length (days)">{(id) => <Input id={id} type="number" min={0} max={365} value={s.trialDays} onChange={(e) => setS({ ...s, trialDays: Number(e.target.value) })} />}</Field>
             <Field label="Premium price (FCFA)">{(id) => <Input id={id} type="number" min={100} value={s.premiumPriceXaf} onChange={(e) => setS({ ...s, premiumPriceXaf: Number(e.target.value) })} />}</Field>
             <Field label="Premium period (days)">{(id) => <Input id={id} type="number" min={1} max={366} value={s.premiumPeriodDays} onChange={(e) => setS({ ...s, premiumPeriodDays: Number(e.target.value) })} />}</Field>
           </Card>
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <SectionTitle>Premium features</SectionTitle>
             <p className="text-sm text-muted">Pharmacy finder, price comparison, medicine information and pharmacy contact are always free.</p>
             {PREMIUM_FEATURES.map((f) => (
               <Toggle key={f} checked={s.premiumFeatures.includes(f)} onChange={(on) => setS({ ...s, premiumFeatures: on ? [...s.premiumFeatures, f] : s.premiumFeatures.filter((x) => x !== f) })} label={f} description={s.premiumFeatures.includes(f) ? 'Requires trial or Premium' : 'Free for everyone'} />
             ))}
           </Card>
-          <Card className="grid gap-4 p-5">
-            <Field label="Medicine safety notice (draft pending clinical/legal review)">{(id) => <Textarea id={id} rows={3} value={s.medicineSafetyNotice} onChange={(e) => setS({ ...s, medicineSafetyNotice: e.target.value })} />}</Field>
+          <Card className="grid gap-4 p-4 sm:p-5">
+            <Field label="Medicine safety notice (draft, needs clinical and legal review)">{(id) => <Textarea id={id} rows={3} value={s.medicineSafetyNotice} onChange={(e) => setS({ ...s, medicineSafetyNotice: e.target.value })} />}</Field>
             <Field label="Health disclaimer (draft)">{(id) => <Textarea id={id} rows={3} value={s.healthDisclaimer} onChange={(e) => setS({ ...s, healthDisclaimer: e.target.value })} />}</Field>
           </Card>
           {save.isError ? <Notice tone="danger">{errorMessage(save.error)}</Notice> : null}
@@ -613,71 +616,58 @@ export function AdminLogs() {
   const sms = useQuery({ queryKey: ['admin', 'sms'], queryFn: () => api<{ items: { id: string; direction: string; phone: string; command: string | null; status: string; provider: string; segments: number; encoding: string; body: string | null; createdAt: string }[] }>('/admin/sms-logs'), enabled: tab === 'sms' });
   const ussd = useQuery({ queryKey: ['admin', 'ussd'], queryFn: () => api<{ items: { sessionId: string; phone: string; screen: string | null; ended: boolean; lastActiveAt: string }[] }>('/admin/ussd-sessions'), enabled: tab === 'ussd' });
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader title="SMS & USSD logs" subtitle="Metadata is kept; message text is deleted after 7 days." />
+    <div className="mx-auto max-w-3xl">
+      <PageHeader title="SMS and USSD logs" subtitle="Metadata is kept. Message text is deleted after 7 days." />
       <Tabs label="Channel" value={tab} onChange={setTab} items={[{ value: 'sms', label: 'SMS' }, { value: 'ussd', label: 'USSD sessions' }]} />
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-border bg-white">
+      <div className="mt-4">
         {tab === 'sms' ? (
           <QueryView query={sms}>
-            {(d) => (
-              <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-slate-50 text-left text-xs text-muted">
-                  <tr>
-                    <th className="px-3 py-2">When</th>
-                    <th className="px-3 py-2">Dir</th>
-                    <th className="px-3 py-2">Number</th>
-                    <th className="px-3 py-2">Command</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Seg</th>
-                    <th className="px-3 py-2">Text</th>
-                  </tr>
-                </thead>
-                <tbody>
+            {(d) =>
+              d.items.length === 0 ? (
+                <EmptyState title="No SMS yet" />
+              ) : (
+                <List label="SMS log">
                   {d.items.map((m) => (
-                    <tr key={m.id} className="border-t border-border align-top">
-                      <td className="whitespace-nowrap px-3 py-2">{dateTime(m.createdAt)}</td>
-                      <td className="px-3 py-2">{m.direction}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{m.phone}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{m.command}</td>
-                      <td className="px-3 py-2">
+                    <ListItem key={m.id} className="text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-semibold">
+                          {m.direction === 'in' ? 'In from' : 'Out to'} <span className="font-mono text-xs">{m.phone}</span>
+                          {m.command ? <span className="ml-2 font-mono text-xs text-muted">{m.command}</span> : null}
+                        </p>
                         <Badge tone={m.status === 'simulated' ? 'amber' : m.status === 'failed' ? 'red' : 'neutral'}>{m.status}</Badge>
-                      </td>
-                      <td className="px-3 py-2">
-                        {m.segments} {m.encoding === 'UCS-2' ? 'U' : ''}
-                      </td>
-                      <td className="max-w-xs px-3 py-2 text-xs">{m.body ?? <em className="text-muted">deleted</em>}</td>
-                    </tr>
+                      </div>
+                      <p className="mt-1 break-words text-xs">{m.body ?? <em className="text-muted">Text deleted after the retention period</em>}</p>
+                      <p className="mt-1 text-xs text-muted">
+                        {dateTime(m.createdAt)} · {m.provider} · {m.segments} segment{m.segments === 1 ? '' : 's'} · {m.encoding}
+                      </p>
+                    </ListItem>
                   ))}
-                </tbody>
-              </table>
-            )}
+                </List>
+              )
+            }
           </QueryView>
         ) : (
           <QueryView query={ussd}>
-            {(d) => (
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs text-muted">
-                  <tr>
-                    <th className="px-3 py-2">Last active</th>
-                    <th className="px-3 py-2">Session</th>
-                    <th className="px-3 py-2">Number</th>
-                    <th className="px-3 py-2">Screen</th>
-                    <th className="px-3 py-2">Ended</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {d.items.map((s) => (
-                    <tr key={s.sessionId} className="border-t border-border">
-                      <td className="px-3 py-2">{dateTime(s.lastActiveAt)}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{s.sessionId}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{s.phone}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{s.screen}</td>
-                      <td className="px-3 py-2">{s.ended ? 'yes' : 'no'}</td>
-                    </tr>
+            {(d) =>
+              d.items.length === 0 ? (
+                <EmptyState title="No USSD sessions yet" />
+              ) : (
+                <List label="USSD sessions">
+                  {d.items.map((u) => (
+                    <ListItem key={u.sessionId} className="text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-mono text-xs">{u.phone}</p>
+                        <Badge tone={u.ended ? 'neutral' : 'blue'}>{u.ended ? 'Ended' : 'Open'}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted">
+                        Screen <span className="font-mono">{u.screen ?? 'none'}</span> · last active {dateTime(u.lastActiveAt)}
+                      </p>
+                      <p className="truncate font-mono text-[11px] text-muted">{u.sessionId}</p>
+                    </ListItem>
                   ))}
-                </tbody>
-              </table>
-            )}
+                </List>
+              )
+            }
           </QueryView>
         )}
       </div>
@@ -689,19 +679,24 @@ export function AdminAudit() {
   const [action, setAction] = useState('');
   const q = useQuery({ queryKey: ['admin', 'audit', action], queryFn: () => api<{ items: { id: string; actorId: string | null; action: string; targetType: string; targetId: string | null; detail: unknown; createdAt: string }[] }>(`/admin/audit${action ? `?action=${encodeURIComponent(action)}` : ''}`) });
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-3xl">
       <PageHeader title="Audit log" subtitle="Append-only: the database rejects edits and deletions of these entries." />
-      <Input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Filter by action prefix, e.g. pharmacy. or consent." aria-label="Filter audit actions" className="mb-4 max-w-sm" />
+      <Input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Filter by action prefix, e.g. pharmacy. or consent." aria-label="Filter audit actions" className="mb-4 sm:max-w-sm" />
       <QueryView query={q}>
         {(d) => (
-          <ul className="grid gap-1.5 text-sm">
+          <List label="Audit entries">
             {d.items.map((a) => (
-              <li key={a.id} className="rounded-xl border border-border bg-white px-3 py-2">
-                <span className="font-mono text-xs text-muted">{dateTime(a.createdAt)}</span> <strong>{a.action}</strong> · {a.targetType} <span className="font-mono text-xs text-muted">{a.targetId?.slice(0, 8)}</span> · actor <span className="font-mono text-xs">{a.actorId?.slice(0, 8) ?? 'system'}</span>
-                {a.detail ? <span className="block truncate font-mono text-[11px] text-muted">{JSON.stringify(a.detail)}</span> : null}
-              </li>
+              <ListItem key={a.id} className="!py-2.5 text-sm">
+                <p>
+                  <strong>{a.action}</strong> · {a.targetType} <span className="font-mono text-xs text-muted">{a.targetId?.slice(0, 8)}</span>
+                </p>
+                <p className="text-xs text-muted">
+                  {dateTime(a.createdAt)} · actor <span className="font-mono">{a.actorId?.slice(0, 8) ?? 'system'}</span>
+                </p>
+                {a.detail ? <p className="truncate font-mono text-[11px] text-muted">{JSON.stringify(a.detail)}</p> : null}
+              </ListItem>
             ))}
-          </ul>
+          </List>
         )}
       </QueryView>
     </div>

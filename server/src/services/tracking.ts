@@ -10,6 +10,7 @@ import {
   normalizeVital,
   streakLength,
   zonedDateTimeToUtc,
+  VITAL_LABELS,
   VITAL_TYPES,
   type OccurrenceStatus,
   type VitalType,
@@ -357,7 +358,7 @@ export async function timeline(
       items.push({
         type: 'vital',
         at: v.measuredAt,
-        title: v.type,
+        title: VITAL_LABELS[v.type as VitalType] ?? v.type,
         detail: v.type === 'bp' ? `${v.value}/${v.value2} ${v.unit}` : `${v.value} ${v.unit}`,
       });
     }

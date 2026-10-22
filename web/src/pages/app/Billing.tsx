@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Crown, FlaskConical, Loader2, Smartphone, XCircle } from 'lucide-react';
-import { Badge, Button, Card, Dialog, Field, Input, LinkButton, Notice, PageHeader, QueryView, StatusBadge, errorMessage } from '../../components/ui';
+import { CalendarClock, CheckCircle2, Crown, FlaskConical, Loader2, Smartphone, XCircle } from 'lucide-react';
+import { Button, Card, Dialog, Field, Input, LinkButton, List, ListItem, ListRow, Notice, PageHeader, QueryView, StatusBadge, errorMessage } from '../../components/ui';
 import { api, post } from '../../lib/api';
 import { dateTime, money } from '../../lib/format';
 import type { Payment, Subscription } from '../../lib/types';
 
 const FEATURE_LABEL: Record<string, string> = {
-  reminders: 'Medicine & checkup reminders',
+  reminders: 'Medicine and checkup reminders',
   vitals: 'Readings log',
   steps: 'Steps',
   water: 'Water',
-  streaks: 'Streaks & adherence',
+  streaks: 'Streaks and adherence',
   history_export: 'PDF summary for your clinician',
 };
 
@@ -37,82 +37,94 @@ export function BillingPage() {
   });
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Plan & payments" />
+      <PageHeader title="Plan and payments" />
       <QueryView query={q}>
         {(s) => (
           <div className="grid gap-5">
-            <Card className="overflow-hidden border-primary-700 bg-primary-700 p-6 text-white">
-              <p className="text-sm text-white/80">Your plan</p>
-              <p className="mt-1 flex items-center gap-2 text-2xl font-bold">
-                {s.tier === 'premium' ? <Crown className="size-6" aria-hidden /> : null}
-                {s.tier === 'trial' ? 'Free trial' : s.tier === 'premium' ? 'Premium' : 'Free'}
-              </p>
-              <p className="mt-1 text-sm text-white/90">
-                {s.tier === 'trial'
-                  ? `${s.daysLeft} day${s.daysLeft === 1 ? '' : 's'} left · ends ${dateTime(s.trialEndsAt)}`
-                  : s.tier === 'premium'
-                    ? `Active until ${dateTime(s.premiumUntil!)}`
-                    : `Trial ended ${dateTime(s.trialEndsAt)}`}
-              </p>
-            </Card>
-            <Card className="p-5">
-              <h2 className="font-bold">Always free</h2>
-              <p className="mt-1 text-sm text-muted">Find verified pharmacies · compare reported prices · reviewed medicine information · contact pharmacies.</p>
-              <h2 className="mt-4 font-bold">Premium</h2>
-              <ul className="mt-2 grid gap-1.5 text-sm">
+            <List label="Your plan">
+              <ListRow
+                icon={s.tier === 'premium' ? Crown : CalendarClock}
+                tone={s.tier === 'free' ? 'muted' : 'blue'}
+                title={s.tier === 'trial' ? 'Free trial' : s.tier === 'premium' ? 'Premium' : 'Free plan'}
+                detail={
+                  s.tier === 'trial'
+                    ? `${s.daysLeft} day${s.daysLeft === 1 ? '' : 's'} left, ends ${dateTime(s.trialEndsAt)}`
+                    : s.tier === 'premium'
+                      ? `Active until ${dateTime(s.premiumUntil!)}`
+                      : `Trial ended ${dateTime(s.trialEndsAt)}`
+                }
+              />
+            </List>
+            <section aria-labelledby="free-h">
+              <h2 id="free-h" className="mb-2 text-lg font-bold">
+                Always free
+              </h2>
+              <p className="text-sm text-muted">Find verified pharmacies, compare reported prices, read reviewed medicine information and message pharmacies.</p>
+            </section>
+            <section aria-labelledby="premium-h">
+              <h2 id="premium-h" className="mb-2 text-lg font-bold">
+                Premium
+              </h2>
+              <List label="Premium features">
                 {s.premiumFeatures.map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <CheckCircle2 className="size-4 text-secondary-600" aria-hidden /> {FEATURE_LABEL[f] ?? f}
-                  </li>
+                  <ListRow key={f} icon={CheckCircle2} tone="green" title={FEATURE_LABEL[f] ?? f} />
                 ))}
-              </ul>
-              <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-t border-border pt-4">
-                <div>
-                  <p className="text-2xl font-extrabold">{money(s.price.amount, s.price.currency)}</p>
-                  <p className="text-xs text-muted">for {s.price.periodDays} days · price shown is a placeholder set by the operator</p>
+              </List>
+              <Card className="mt-4 p-4 sm:p-5">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-2xl font-bold">{money(s.price.amount, s.price.currency)}</p>
+                  <p className="text-sm text-muted">for {s.price.periodDays} days</p>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  {s.provider === 'fapshi' ? (
+                <p className="mt-1 text-xs text-muted">The price is a placeholder set by the operator.</p>
+                {s.provider === 'fapshi' ? (
+                  <div className="mt-4">
                     <Field label="Email for receipt" optional>
-                      {(id) => <Input id={id} type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-60" />}
+                      {(id) => <Input id={id} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
                     </Field>
-                  ) : null}
-                  <Button size="lg" icon={s.provider === 'demo' ? FlaskConical : Smartphone} loading={checkout.isPending} onClick={() => checkout.mutate()}>
-                    {s.tier === 'premium' ? 'Extend Premium' : 'Get Premium'}
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-3">
-                {s.provider === 'demo' ? (
-                  <Notice tone="warning" title="Test / demo checkout">
-                    No payment provider is connected. The checkout is simulated and no money is charged.
-                  </Notice>
-                ) : (
-                  <Notice>
-                    Payment by MTN Mobile Money or Orange Money through Fapshi{s.providerEnvironment === 'sandbox' ? ' (sandbox: test payments only, no real money)' : ''}. You will be sent to Fapshi’s secure page and brought back here.
-                  </Notice>
-                )}
-              </div>
-              {checkout.isError ? (
+                  </div>
+                ) : null}
+                <Button size="lg" className="mt-4 w-full" icon={s.provider === 'demo' ? FlaskConical : Smartphone} loading={checkout.isPending} onClick={() => checkout.mutate()}>
+                  {s.tier === 'premium' ? 'Extend Premium' : 'Get Premium'}
+                </Button>
                 <div className="mt-3">
-                  <Notice tone="danger">{errorMessage(checkout.error)}</Notice>
+                  {s.provider === 'demo' ? (
+                    <Notice tone="warning" title="Test checkout">
+                      No payment provider is connected. The checkout is simulated and no money is charged.
+                    </Notice>
+                  ) : (
+                    <Notice>
+                      Pay with MTN Mobile Money or Orange Money through Fapshi{s.providerEnvironment === 'sandbox' ? ' (sandbox: test payments only, no real money)' : ''}. You go to Fapshi’s payment page and come back here.
+                    </Notice>
+                  )}
                 </div>
-              ) : null}
-            </Card>
+                {checkout.isError ? (
+                  <div className="mt-3">
+                    <Notice tone="danger">{errorMessage(checkout.error)}</Notice>
+                  </div>
+                ) : null}
+              </Card>
+            </section>
             {s.payments.length ? (
-              <Card className="p-5">
-                <h2 className="font-bold">Payments</h2>
-                <ul className="mt-2 divide-y divide-border text-sm">
+              <section aria-labelledby="payments-h">
+                <h2 id="payments-h" className="mb-2 text-lg font-bold">
+                  Payments
+                </h2>
+                <List label="Payments">
                   {s.payments.map((p) => (
-                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                      <span>
-                        {money(p.amount, p.currency)} · {p.periodDays} days · {dateTime(p.createdAt)} · {p.provider === 'demo' ? <Badge tone="amber">demo</Badge> : 'Fapshi'}
+                    <ListItem key={p.id} className="flex items-center justify-between gap-3">
+                      <span className="min-w-0 text-sm">
+                        <span className="block font-semibold">
+                          {money(p.amount, p.currency)} for {p.periodDays} days
+                        </span>
+                        <span className="block text-xs text-muted">
+                          {dateTime(p.createdAt)} · {p.provider === 'demo' ? 'test checkout, no money moved' : 'Fapshi'}
+                        </span>
                       </span>
                       <StatusBadge status={p.status} />
-                    </li>
+                    </ListItem>
                   ))}
-                </ul>
-              </Card>
+                </List>
+              </section>
             ) : null}
           </div>
         )}
@@ -121,7 +133,7 @@ export function BillingPage() {
       <Dialog
         open={!!demo}
         onClose={() => setDemo(null)}
-        title="Test / demo checkout"
+        title="Test checkout"
         footer={
           <>
             <Button variant="outline" onClick={() => setDemo(null)}>

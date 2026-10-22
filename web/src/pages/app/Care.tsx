@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CARE_CATEGORIES, type CareCategory } from '@medimate/shared';
 import { ShieldCheck, UserPlus, Users } from 'lucide-react';
-import { Button, Card, EmptyState, Field, Input, Notice, PageHeader, QueryView, StatusBadge, Toggle, errorMessage, useToast } from '../../components/ui';
+import { Button, Card, EmptyState, Field, Input, List, ListItem, Notice, PageHeader, QueryView, StatusBadge, Toggle, errorMessage, useToast } from '../../components/ui';
 import { api, patch, post } from '../../lib/api';
 import type { CareLink } from '../../lib/types';
 
@@ -10,7 +10,7 @@ export const CATEGORY_LABEL: Record<CareCategory, [string, string]> = {
   reminders: ['Reminder status', 'Whether today’s reminders were answered, and alerts when one is not confirmed.'],
   checkups: ['Checkups', 'Upcoming and recent checkups.'],
   vitals: ['Readings', 'Blood pressure, glucose, weight and other readings you log.'],
-  activity: ['Water & steps', 'Daily totals for the last week.'],
+  activity: ['Water and steps', 'Daily totals for the last week.'],
   reactions: ['Reactions', 'Reactions you logged.'],
 };
 
@@ -47,7 +47,7 @@ function LinkCard({ l }: { l: CareLink }) {
   });
   const live = l.status === 'active' || l.status === 'pending';
   return (
-    <Card as="li" className="p-5">
+    <ListItem className="!py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-bold">{l.person?.displayName ?? 'Invited person'}</p>
@@ -73,7 +73,7 @@ function LinkCard({ l }: { l: CareLink }) {
       ) : (
         <p className="mt-2 text-sm text-muted">This link is no longer active. They cannot see any of your information.</p>
       )}
-    </Card>
+    </ListItem>
   );
 }
 
@@ -95,7 +95,7 @@ export default function Care() {
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader title="Caretakers" subtitle="Invite someone you trust to follow chosen parts of your information. You decide each category and can stop sharing at any time." />
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
         <QueryView query={links}>
           {(d) =>
             d.items.length === 0 ? (
@@ -103,15 +103,15 @@ export default function Care() {
                 A caretaker can be a family member or friend who helps you remember your medicines.
               </EmptyState>
             ) : (
-              <ul className="grid gap-3">
+              <List label="Caretakers">
                 {d.items.map((l) => (
                   <LinkCard key={l.id} l={l} />
                 ))}
-              </ul>
+              </List>
             )
           }
         </QueryView>
-        <Card className="h-fit p-5">
+        <Card className="p-4 sm:p-5">
           <h2 className="flex items-center gap-2 font-bold">
             <UserPlus className="size-5 text-primary-600" aria-hidden /> Invite a caretaker
           </h2>

@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { planCreateSchema, type PlanCreate } from '@medimate/shared';
 import { BellRing, CalendarDays, Clock, PackageCheck, Pencil, Pill, Plus, Square, X } from 'lucide-react';
 import { HealthDisclaimer } from '../../components/layout';
-import { Badge, Button, Card, Chip, EmptyState, Field, Input, LinkButton, Notice, PageHeader, QueryView, Textarea, Toggle, errorMessage, useToast } from '../../components/ui';
+import { Badge, Button, Card, Chip, EmptyState, Field, Input, LinkButton, List, ListItem, Notice, PageHeader, QueryView, Textarea, Toggle, errorMessage, useToast } from '../../components/ui';
 import { api, del, fieldErrors, patch, post } from '../../lib/api';
 import { useConfig, useMe } from '../../lib/auth';
 import { todayIn } from '../../lib/format';
@@ -34,7 +34,7 @@ export function PlansPage() {
     onError: (e) => toast(errorMessage(e), 'error'),
   });
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-3xl">
       <PageHeader
         title="My medicines"
         subtitle="Enter each medicine exactly as written on your prescription. MEDIMATE repeats your instructions and never calculates or changes a dose."
@@ -51,45 +51,36 @@ export function PlansPage() {
               Add a medicine prescribed for you to start getting reminders.
             </EmptyState>
           ) : (
-            <ul className="grid gap-3">
+            <List label="My medicines">
               {d.items.map((p) => (
-                <Card as="li" key={p.id} className={`p-5 ${p.active ? '' : 'opacity-70'}`}>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex min-w-0 gap-3">
-                      <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary-50 text-primary-600">
-                        <Pill className="size-6" aria-hidden />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-lg font-bold">{p.medicineName}</p>
-                        <p className="text-sm text-ink">{p.doseText}</p>
-                        <p className="text-sm text-muted">{p.frequencyText}</p>
-                      </div>
+                <ListItem key={p.id} className={p.active ? '!py-4' : '!py-4 opacity-70'}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-lg font-bold">{p.medicineName}</p>
+                      <p className="text-[15px] text-ink">{p.doseText}</p>
+                      <p className="text-sm text-muted">
+                        {p.frequencyText} · at {p.times.join(', ')}
+                      </p>
                     </div>
                     {p.active ? <Badge tone="green">Active</Badge> : <Badge>Stopped</Badge>}
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {p.times.map((t) => (
-                      <span key={t} className="inline-flex items-center gap-1 rounded-lg border border-primary-100 bg-primary-50 px-2.5 py-1 text-sm font-semibold text-primary-700">
-                        <Clock className="size-3.5" aria-hidden /> {t}
-                      </span>
-                    ))}
-                  </div>
-                  <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted">
-                    <div className="flex items-center gap-1">
-                      <CalendarDays className="size-3.5" aria-hidden /> {p.startDate}
-                      {p.endDate ? ` → ${p.endDate}` : ' → ongoing'}
-                    </div>
+                  <ul className="mt-2 grid gap-0.5 text-xs text-muted">
+                    <li className="flex items-center gap-1.5">
+                      <CalendarDays className="size-3.5 shrink-0" aria-hidden /> From {p.startDate}
+                      {p.endDate ? ` to ${p.endDate}` : ', no end date'}
+                    </li>
                     {p.refillDate ? (
-                      <div className="flex items-center gap-1">
-                        <PackageCheck className="size-3.5" aria-hidden /> Refill on {p.refillDate} (reminder 2 days before, 09:00)
-                      </div>
+                      <li className="flex items-center gap-1.5">
+                        <PackageCheck className="size-3.5 shrink-0" aria-hidden /> Refill on {p.refillDate}, reminder 2 days before at 09:00
+                      </li>
                     ) : null}
-                    <div>{p.smsReminders ? 'SMS + app reminders' : 'App reminders only'}</div>
-                    <div>{p.caretakerAlerts ? 'Caretaker alerted if not confirmed' : 'No caretaker alerts'}</div>
-                  </dl>
+                    <li className="flex items-center gap-1.5">
+                      <Clock className="size-3.5 shrink-0" aria-hidden /> {p.smsReminders ? 'SMS and app reminders' : 'App reminders only'} · {p.caretakerAlerts ? 'caretaker alerted if not confirmed' : 'no caretaker alerts'}
+                    </li>
+                  </ul>
                   {p.notes ? <p className="mt-2 text-sm text-muted">Notes: {p.notes}</p> : null}
                   {p.active ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <LinkButton to={`/app/medicines/${p.id}`} variant="outline" size="sm" icon={Pencil}>
                         Edit
                       </LinkButton>
@@ -98,14 +89,14 @@ export function PlansPage() {
                       </Button>
                       {config?.demoMode ? (
                         <Button variant="ghost" size="sm" icon={BellRing} loading={test.isPending && test.variables === p.id} onClick={() => test.mutate(p.id)}>
-                          Send a test reminder now (demo)
+                          Test reminder now
                         </Button>
                       ) : null}
                     </div>
                   ) : null}
-                </Card>
+                </ListItem>
               ))}
-            </ul>
+            </List>
           )
         }
       </QueryView>

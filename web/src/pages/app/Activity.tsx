@@ -4,7 +4,7 @@ import { WATER_BOTTLE_ML, WATER_GLASS_ML } from '@medimate/shared';
 import { CupSoda, Flame, GlassWater, Milk, Plus, Target, Trash2 } from 'lucide-react';
 import { BarChart, ProgressRing } from '../../components/charts';
 import { HealthDisclaimer } from '../../components/layout';
-import { Button, Card, Field, Input, Notice, PageHeader, QueryView, SectionTitle, errorMessage, useToast } from '../../components/ui';
+import { Button, Card, Field, Input, List, ListItem, Notice, PageHeader, QueryView, SectionTitle, errorMessage, useToast } from '../../components/ui';
 import { api, del, patch, post } from '../../lib/api';
 import { useMe } from '../../lib/auth';
 import { todayIn } from '../../lib/format';
@@ -39,13 +39,24 @@ function GoalEditor({ kind, goal }: { kind: 'steps' | 'water'; goal: number }) {
         m.mutate();
       }}
     >
-      <Field label={kind === 'steps' ? 'Daily step goal' : 'Daily water target (ml)'}>
-        {(id) => <Input id={id} type="number" min={kind === 'steps' ? 100 : 250} max={kind === 'steps' ? 100000 : 10000} value={v} onChange={(e) => setV(e.target.value)} className="w-36" />}
-      </Field>
+      <div className="flex-1">
+        <Field label={kind === 'steps' ? 'Daily step goal' : 'Daily water target (ml)'}>
+          {(id) => <Input id={id} type="number" min={kind === 'steps' ? 100 : 250} max={kind === 'steps' ? 100000 : 10000} value={v} onChange={(e) => setV(e.target.value)} />}
+        </Field>
+      </div>
       <Button type="submit" variant="outline" icon={Target} loading={m.isPending}>
         Set
       </Button>
     </form>
+  );
+}
+
+function Streak({ n, unit }: { n: number; unit: string }) {
+  return (
+    <p className="mt-3 flex items-center gap-2 text-sm">
+      <Flame className="size-4 shrink-0 text-warning" aria-hidden />
+      {n > 0 ? `${n} day${n === 1 ? '' : 's'} in a row at your ${unit}.` : `Every bit counts. A streak starts on any day you reach your ${unit}.`}
+    </p>
   );
 }
 
@@ -68,24 +79,19 @@ export function StepsPage() {
   });
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader title="Steps & activity" subtitle="Log steps from your phone, a step counter or your own estimate. Basic phones can send STEPS 4500 by SMS." />
+      <PageHeader title="Steps" subtitle="Log steps from your phone, a step counter or your own estimate. Basic phones can send STEPS 4500 by SMS." />
       <QueryView query={q}>
         {(d) => (
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            <Card className="p-5">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
+            <Card className="p-4 sm:p-5 lg:col-start-1 lg:row-start-1">
               <ProgressRing value={d.todayTotal} goal={d.goal} label="Steps today" sub={`of your ${d.goal.toLocaleString()} step goal today`} />
-              <p className="mt-3 flex items-center gap-2 text-sm">
-                <Flame className="size-4 text-warning" aria-hidden />
-                {d.streak > 0 ? `${d.streak} days in a row at your goal.` : 'Every step counts. Your streak starts on any day you reach your goal.'}
-              </p>
-              <div className="mt-5">
-                <SectionTitle>Last 14 days</SectionTitle>
-                <BarChart title="Steps per day" unit="steps" goal={d.goal} points={d.daily.map((x) => ({ label: dayLabel(x.date), value: x.total }))} />
-              </div>
+              <Streak n={d.streak} unit="step goal" />
             </Card>
-            <div className="grid h-fit gap-4">
-              <Card className="p-5">
-                <SectionTitle>Add steps</SectionTitle>
+            <Card as="section" className="grid gap-5 p-4 sm:p-5 lg:col-start-2 lg:row-span-2 lg:row-start-1" aria-labelledby="add-steps-h">
+              <div>
+                <h2 id="add-steps-h" className="mb-3 text-lg font-bold">
+                  Add steps
+                </h2>
                 <form
                   className="grid gap-3"
                   onSubmit={(e) => {
@@ -93,18 +99,28 @@ export function StepsPage() {
                     add.mutate();
                   }}
                 >
-                  <Field label="Steps">{(id) => <Input id={id} type="number" min={0} max={100000} required value={steps} onChange={(e) => setSteps(e.target.value)} />}</Field>
-                  <Field label="Day">{(id) => <Input id={id} type="date" max={todayIn(me?.timezone ?? 'Africa/Douala')} value={date} onChange={(e) => setDate(e.target.value)} />}</Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Steps">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} max={100000} required value={steps} onChange={(e) => setSteps(e.target.value)} />}</Field>
+                    <Field label="Day">{(id) => <Input id={id} type="date" max={todayIn(me?.timezone ?? 'Africa/Douala')} value={date} onChange={(e) => setDate(e.target.value)} />}</Field>
+                  </div>
                   {add.isError ? <Notice tone="danger">{errorMessage(add.error)}</Notice> : null}
                   <Button type="submit" icon={Plus} loading={add.isPending}>
                     Add
                   </Button>
                 </form>
-              </Card>
-              <Card className="p-5">
+              </div>
+              <div className="border-t border-border pt-4">
                 <GoalEditor kind="steps" goal={d.goal} />
+              </div>
+            </Card>
+            <section className="lg:col-start-1 lg:row-start-2" aria-labelledby="steps-14-h">
+              <SectionTitle>
+                <span id="steps-14-h">Last 14 days</span>
+              </SectionTitle>
+              <Card className="p-4">
+                <BarChart title="Steps per day" unit="steps" goal={d.goal} points={d.daily.map((x) => ({ label: dayLabel(x.date), value: x.total }))} />
               </Card>
-            </div>
+            </section>
           </div>
         )}
       </QueryView>
@@ -135,8 +151,8 @@ export function WaterPage() {
       <PageHeader title="Water" subtitle="Hydration needs vary from person to person and with weather, activity and health conditions. Set a target that suits you, or ask a health worker." />
       <QueryView query={q}>
         {(d) => (
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            <Card className="p-5">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
+            <Card className="p-4 sm:p-5 lg:col-start-1 lg:row-start-1">
               <ProgressRing value={d.todayTotal} goal={d.goal} label="Water today" sub={`ml of your ${d.goal} ml target`} />
               <div className="mt-5 grid grid-cols-3 gap-2">
                 {[
@@ -144,8 +160,8 @@ export function WaterPage() {
                   { ml: WATER_BOTTLE_ML, label: 'Bottle', icon: Milk },
                   { ml: 1000, label: '1 litre', icon: CupSoda },
                 ].map((b) => (
-                  <Button key={b.ml} variant="outline" className="!h-auto flex-col py-3" onClick={() => add.mutate(b.ml)} disabled={add.isPending}>
-                    <b.icon className="size-6 text-primary-600" aria-hidden />
+                  <Button key={b.ml} variant="outline" className="!h-auto flex-col !gap-0.5 py-3" onClick={() => add.mutate(b.ml)} disabled={add.isPending}>
+                    <b.icon className="size-5 text-primary-600" aria-hidden />
                     <span>{b.label}</span>
                     <span className="text-xs font-normal text-muted">{b.ml} ml</span>
                   </Button>
@@ -159,39 +175,47 @@ export function WaterPage() {
                   setCustom('');
                 }}
               >
-                <Field label="Other amount (ml)">{(id) => <Input id={id} type="number" min={10} max={5000} value={custom} onChange={(e) => setCustom(e.target.value)} className="w-32" />}</Field>
+                <div className="flex-1">
+                  <Field label="Other amount (ml)">{(id) => <Input id={id} type="number" inputMode="numeric" min={10} max={5000} value={custom} onChange={(e) => setCustom(e.target.value)} />}</Field>
+                </div>
                 <Button type="submit" variant="outline" icon={Plus}>
                   Add
                 </Button>
               </form>
-              <div className="mt-6">
-                <SectionTitle>Last 14 days</SectionTitle>
-                <BarChart title="Water per day" unit="ml" goal={d.goal} points={d.daily.map((x) => ({ label: dayLabel(x.date), value: x.total }))} />
-              </div>
+              <Streak n={d.streak} unit="target" />
             </Card>
-            <div className="grid h-fit gap-4">
-              <Card className="p-5">
-                <SectionTitle>Today</SectionTitle>
+            <section className="grid gap-4 lg:col-start-2 lg:row-span-2 lg:row-start-1" aria-labelledby="water-today-h">
+              <div>
+                <SectionTitle>
+                  <span id="water-today-h">Logged today</span>
+                </SectionTitle>
                 {d.todayEntries.length === 0 ? (
                   <p className="text-sm text-muted">Nothing logged yet today.</p>
                 ) : (
-                  <ul className="divide-y divide-border text-sm">
+                  <List label="Water logged today">
                     {d.todayEntries.map((e) => (
-                      <li key={e.id} className="flex items-center justify-between py-1.5">
+                      <ListItem key={e.id} className="flex items-center justify-between gap-2 !py-2 text-sm">
                         <span>
-                          {e.amountMl} ml · {e.loggedAt ? new Date(e.loggedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''} · {e.source}
+                          <strong>{e.amountMl} ml</strong> · {e.loggedAt ? new Date(e.loggedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''} · by {e.source}
                         </span>
                         <Button variant="ghost" size="sm" icon={Trash2} aria-label="Remove entry" onClick={() => remove.mutate(e.id)} />
-                      </li>
+                      </ListItem>
                     ))}
-                  </ul>
+                  </List>
                 )}
-                <p className="mt-3 text-sm">{d.streak > 0 ? `${d.streak}-day streak of reaching your target.` : 'Reach your target on any day to start a streak.'}</p>
-              </Card>
-              <Card className="p-5">
+              </div>
+              <Card className="p-4">
                 <GoalEditor kind="water" goal={d.goal} />
               </Card>
-            </div>
+            </section>
+            <section className="lg:col-start-1 lg:row-start-2" aria-labelledby="water-14-h">
+              <SectionTitle>
+                <span id="water-14-h">Last 14 days</span>
+              </SectionTitle>
+              <Card className="p-4">
+                <BarChart title="Water per day" unit="ml" goal={d.goal} points={d.daily.map((x) => ({ label: dayLabel(x.date), value: x.total }))} />
+              </Card>
+            </section>
           </div>
         )}
       </QueryView>

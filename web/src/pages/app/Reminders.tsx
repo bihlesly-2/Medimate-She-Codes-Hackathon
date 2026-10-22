@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, CalendarCheck, PackageCheck, Pencil, Pill } from 'lucide-react';
 import { HealthDisclaimer } from '../../components/layout';
-import { Badge, Button, Card, Dialog, EmptyState, Field, LinkButton, Notice, PageHeader, QueryView, Select, StatusBadge, Tabs, Textarea, errorMessage, useToast } from '../../components/ui';
+import { Badge, Button, Dialog, EmptyState, Field, LinkButton, List, ListItem, Notice, PageHeader, QueryView, Select, StatusBadge, Tabs, Textarea, errorMessage, useToast } from '../../components/ui';
 import { api, post } from '../../lib/api';
 import { shortDay } from '../../lib/format';
 import type { Occurrence } from '../../lib/types';
@@ -61,12 +61,26 @@ function CorrectDialog({ o, onClose }: { o: Occurrence; onClose: () => void }) {
   );
 }
 
+function DeliveryBadge({ status }: { status: string | null | undefined }) {
+  if (status === 'simulated') return <Badge tone="amber">SMS simulated</Badge>;
+  if (status === 'web_only') return <Badge>In app</Badge>;
+  if (status === 'retrying') return <Badge tone="amber">SMS retrying</Badge>;
+  if (status === 'failed') return <Badge tone="red">SMS failed</Badge>;
+  return null;
+}
+
+function title(o: Occurrence) {
+  if (o.kind === 'medication') return o.plan?.medicineName;
+  if (o.kind === 'refill') return `Refill coming up: ${o.plan?.medicineName}`;
+  return `Checkup tomorrow: ${o.checkup?.title}`;
+}
+
 export default function Reminders() {
   const [range, setRange] = useState<'today' | 'upcoming' | 'history'>('today');
   const [correcting, setCorrecting] = useState<Occurrence | null>(null);
   const q = useQuery({ queryKey: ['reminders', range], queryFn: () => api<{ items: Occurrence[] }>(`/reminders?range=${range}`) });
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-3xl">
       <PageHeader
         title="Reminders"
         subtitle="Reminders come from the prescriptions you entered. Answer here, or reply TAKEN or SKIP to the SMS."
@@ -103,50 +117,44 @@ export default function Reminders() {
                 {[...byDate.entries()].map(([date, list]) => {
                   const sd = shortDay(date);
                   return (
-                    <section key={date} aria-label={date} className="grid gap-2 sm:grid-cols-[72px_1fr]">
-                      <div className="flex items-center gap-2 sm:flex-col sm:items-stretch">
-                        <div className="grid w-16 place-items-center rounded-2xl border border-border bg-white py-2 text-center shadow-sm">
-                          <span className="text-[11px] font-semibold text-muted">{sd.weekday}</span>
-                          <span className="text-xl font-bold leading-tight">{sd.day}</span>
-                          <span className="text-[11px] text-muted">{sd.month}</span>
-                        </div>
-                      </div>
-                      <ul className="grid gap-2">
+                    <section key={date} aria-label={date}>
+                      <h2 className="mb-2 text-sm font-bold text-muted">
+                        {sd.weekday} {sd.day} {sd.month}
+                      </h2>
+                      <List>
                         {list.map((o) => {
                           const Icon = KIND_ICON[o.kind];
+                          const overdue = o.status === 'scheduled' && new Date(o.scheduledFor).getTime() < Date.now();
                           return (
-                            <Card as="li" key={o.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-                              <div className="flex min-w-0 items-center gap-3">
-                                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-50 text-primary-600">
-                                  <Icon className="size-5" aria-hidden />
-                                </span>
+                            <ListItem key={o.id} className="sm:flex sm:items-center sm:justify-between sm:gap-4">
+                              <div className="flex min-w-0 items-start gap-3">
+                                <Icon className="mt-0.5 size-5 shrink-0 text-primary-600" aria-hidden />
                                 <div className="min-w-0">
                                   <p className="font-bold">
-                                    {o.localTime} ·{' '}
-                                    {o.kind === 'medication' ? o.plan?.medicineName : o.kind === 'refill' ? `Refill coming up: ${o.plan?.medicineName}` : `Checkup tomorrow: ${o.checkup?.title}`}
+                                    {o.localTime} · {title(o)}
                                   </p>
-                                  {o.plan && o.kind === 'medication' ? <p className="truncate text-sm text-muted">{o.plan.doseText}</p> : null}
+                                  {o.plan && o.kind === 'medication' ? <p className="text-sm text-ink">{o.plan.doseText}</p> : null}
                                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                                    <StatusBadge status={o.status === 'scheduled' && new Date(o.scheduledFor).getTime() < Date.now() ? 'sent' : o.status} label={o.status === 'scheduled' && new Date(o.scheduledFor).getTime() < Date.now() ? 'Not answered' : undefined} />
-                                    <span>code {o.ref}</span>
-                                    {o.deliveryStatus === 'simulated' ? <Badge tone="amber">SMS simulated</Badge> : o.deliveryStatus === 'web_only' ? <Badge>In app</Badge> : o.deliveryStatus === 'retrying' ? <Badge tone="amber">SMS retrying</Badge> : o.deliveryStatus === 'failed' ? <Badge tone="red">SMS failed</Badge> : null}
-                                    {o.confirmedChannel ? <span>answered via {o.confirmedChannel}</span> : null}
+                                    <StatusBadge status={overdue ? 'sent' : o.status} label={overdue ? 'Not answered' : undefined} />
+                                    <span>SMS code {o.ref}</span>
+                                    <DeliveryBadge status={o.deliveryStatus} />
+                                    {o.confirmedChannel ? <span>answered by {o.confirmedChannel}</span> : null}
                                   </div>
                                 </div>
                               </div>
-                              {range === 'history' && o.kind === 'medication' ? (
-                                <Button variant="ghost" size="sm" icon={Pencil} onClick={() => setCorrecting(o)}>
-                                  Correct
-                                </Button>
-                              ) : o.kind === 'medication' ? (
-                                <ReminderActions o={o} compact />
-                              ) : (
-                                <StatusBadge status={o.status} />
-                              )}
-                            </Card>
+                              <div className="mt-3 shrink-0 pl-8 sm:mt-0 sm:pl-0">
+                                {range === 'history' && o.kind === 'medication' ? (
+                                  <Button variant="ghost" size="sm" icon={Pencil} onClick={() => setCorrecting(o)}>
+                                    Correct
+                                  </Button>
+                                ) : o.kind === 'medication' && o.canConfirm ? (
+                                  <ReminderActions o={o} compact />
+                                ) : null}
+                              </div>
+                            </ListItem>
                           );
                         })}
-                      </ul>
+                      </List>
                     </section>
                   );
                 })}

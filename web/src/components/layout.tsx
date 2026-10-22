@@ -249,19 +249,41 @@ function SideNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/** Phone tab bar: five destinations, always with text labels (icons alone are hard to learn). */
+/**
+ * Phone tab bar: up to five destinations, always with text labels (icons alone are hard to learn).
+ * Inside the pharmacy or admin sections it shows that section's pages instead of the patient tabs.
+ */
 function TabBar() {
   const { t } = useTranslation();
-  const items: NavItem[] = [
+  const { pathname } = useLocation();
+  const { data: me } = useMe();
+  let items: NavItem[] = [
     { to: '/app', label: t('nav.home'), icon: Home, end: true },
     { to: '/app/reminders', label: t('nav.reminders'), icon: Bell },
     { to: '/find', label: 'Pharmacy', icon: Search },
     { to: '/app/health', label: t('nav.health'), icon: HeartPulse },
     { to: '/app/settings', label: 'Me', icon: User },
   ];
+  if (pathname.startsWith('/pharmacy') && hasRole(me, 'pharmacy')) {
+    items = [
+      { to: '/pharmacy', label: 'Overview', icon: Store, end: true },
+      { to: '/pharmacy/stock', label: 'Stock', icon: ClipboardList },
+      { to: '/pharmacy/inbox', label: 'Inquiries', icon: MessageSquare },
+      { to: '/pharmacy/profile', label: 'Profile', icon: ShieldCheck },
+      { to: '/app', label: 'My health', icon: Home, end: true },
+    ];
+  } else if (pathname.startsWith('/admin') && hasRole(me, 'admin', 'reviewer')) {
+    items = [
+      { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
+      ...(hasRole(me, 'admin') ? [{ to: '/admin/pharmacies', label: 'Verify', icon: ShieldCheck }] : []),
+      { to: '/admin/medicines', label: 'Medicines', icon: Pill },
+      { to: '/admin/tips', label: 'Tips', icon: HeartPulse },
+      { to: '/app', label: 'My health', icon: Home, end: true },
+    ];
+  }
   return (
     <nav aria-label="Main" className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border bg-white md:hidden">
-      <ul className="grid grid-cols-5">
+      <ul className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((it) => (
           <li key={it.to}>
             <NavLink

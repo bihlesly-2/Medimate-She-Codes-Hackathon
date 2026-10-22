@@ -36,7 +36,7 @@ import {
  */
 export const DEMO_ACCOUNTS = [
   { key: 'ama', phone: '+237600000001', name: 'Ama (demo patient)', roles: ['patient'], note: 'Active trial, reminders, readings, caretaker link' },
-  { key: 'ben', phone: '+237600000002', name: 'Ben (demo patient, trial ended)', roles: ['patient'], note: 'Trial expired — premium features locked' },
+  { key: 'ben', phone: '+237600000002', name: 'Ben (demo patient, trial ended)', roles: ['patient'], note: 'Trial expired, premium features locked' },
   { key: 'clara', phone: '+237600000003', name: 'Clara (demo caretaker)', roles: ['patient', 'caretaker'], note: 'Caretaker for Ama (reminders, checkups, activity)' },
   { key: 'dan', phone: '+237600000004', name: 'Dan (demo pharmacist, Molyko)', roles: ['patient', 'pharmacy'], note: 'Staff at Demo Pharmacy Molyko' },
   { key: 'eve', phone: '+237600000005', name: 'Eve (demo admin)', roles: ['patient', 'admin'], note: 'Admin: verification, catalogue, settings, audit' },
@@ -139,7 +139,7 @@ export async function seedDemo(deps: Pick<Deps, 'db' | 'clock'>, opts: { reset: 
     { key: 'ibu', name: 'Ibuprofen', generic: 'Ibuprofen', strength: '400 mg', form: 'tablet', verified: false },
     { key: 'al', name: 'Artemether/Lumefantrine', generic: 'Artemether + Lumefantrine', strength: '20/120 mg', form: 'tablet', verified: false },
   ];
-  const PLACEHOLDER = 'DEMO PLACEHOLDER — MEDIMATE has not written clinical content. Replace with the approved text from your national medicines authority or a reviewed formulary.';
+  const PLACEHOLDER = 'DEMO PLACEHOLDER. MEDIMATE has not written clinical content. Replace with the approved text from your national medicines authority or a reviewed formulary.';
   const md: Record<string, string> = {};
   for (const m of medSeed) {
     const content = m.verified || m.review;
@@ -156,7 +156,7 @@ export async function seedDemo(deps: Pick<Deps, 'db' | 'clock'>, opts: { reset: 
         usageNotes: content ? PLACEHOLDER : null,
         warnings: content ? PLACEHOLDER : null,
         storage: content ? PLACEHOLDER : null,
-        sourceAuthority: content ? 'DEMO SOURCE (fictional — replace before production)' : null,
+        sourceAuthority: content ? 'DEMO SOURCE (fictional, replace before production)' : null,
         sourceUrl: content ? 'https://example.org/demo-formulary' : null,
         sourceVersionDate: content ? '2026-01-01' : null,
         submittedBy: content ? eve : null,
@@ -209,7 +209,7 @@ export async function seedDemo(deps: Pick<Deps, 'db' | 'clock'>, opts: { reset: 
       times: ['08:00', '20:00'],
       startDate: addDays(today, -10),
       refillDate: addDays(today, 5),
-      notes: 'Demo plan — fictional prescription',
+      notes: 'Demo plan, fictional prescription',
       timezone: tz,
       smsReminders: true,
       caretakerAlerts: true,
@@ -323,7 +323,7 @@ export async function seedDemo(deps: Pick<Deps, 'db' | 'clock'>, opts: { reset: 
     await db.insert(healthTips).values({
       ...t,
       language: 'en',
-      source: 'DEMO content — pending review by a qualified professional',
+      source: 'DEMO content, pending review by a qualified professional',
       authorId: eve,
       reviewerId: t.status === 'published' ? femi : null,
       reviewedAt: t.status === 'published' ? ago(24 * 15) : null,
