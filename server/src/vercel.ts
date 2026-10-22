@@ -20,7 +20,25 @@ function getApp() {
   return appPromise;
 }
 
+/**
+ * The build routes `/api/(.*)` to this function as `/api?__path=$1`. If the platform hands the
+ * function the rewritten URL, rebuild `/api/<path>?<original query>` so Express routes it normally;
+ * either way the helper parameter is removed.
+ */
+export function restoreOriginalUrl(url: string | undefined): string {
+  const raw = url ?? '/';
+  const u = new URL(raw, 'http://localhost');
+  const path = u.searchParams.get('__path');
+  if (path === null) return raw;
+  u.searchParams.delete('__path');
+  const rewritten = u.pathname === '/api' || u.pathname === '/api/';
+  const pathname = rewritten ? `/api/${path.split('/').map(encodeURIComponent).join('/')}` : u.pathname;
+  const query = u.searchParams.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
+  req.url = restoreOriginalUrl(req.url);
   try {
     const app = await getApp();
     app(req as never, res as never);

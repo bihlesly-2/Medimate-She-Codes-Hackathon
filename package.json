@@ -24,7 +24,8 @@
     "test:e2e": "playwright test",
     "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w web",
     "lint": "eslint .",
-    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "vercel-build": "node scripts/vercel-build.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
