@@ -5,7 +5,7 @@ import type { Config } from '../config';
  * Provider-agnostic SMS gateway. Business logic only talks to this interface.
  * - `simulator`: never sends anything; messages appear in the browser simulator, labelled "Simulated".
  * - `africastalking`: Africa's Talking bulk SMS API. Implemented to the provider's documented request
- *   shape but NOT verified against a live account in this repository (see docs/PROVIDERS.md).
+ *   shape but NOT verified against a live account in this repository (see docs/SMS_USSD.md).
  */
 export interface OutboundSms {
   to: string;
