@@ -34,6 +34,7 @@ import {
 import { api } from '../lib/api';
 import { hasRole, useConfig, useLogout, useMe } from '../lib/auth';
 import { BrandLink, Wordmark } from './brand';
+import { InstallAppButton } from './install';
 import { cx } from './ui';
 
 export function DemoBanner() {
@@ -118,14 +119,18 @@ export function PublicLayout() {
                 {l.label}
               </NavLink>
             ))}
+            <InstallAppButton className="ml-2" />
             <Link to={me.data ? '/app' : '/login'} className="ml-2 inline-flex min-h-11 items-center rounded-xl bg-primary-600 px-4 text-[15px] font-semibold text-white hover:bg-primary-700">
               {me.data ? 'My MEDIMATE' : t('nav.signIn')}
             </Link>
           </nav>
-          <button className="grid size-11 place-items-center rounded-xl border border-border md:hidden" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen((v) => !v)}>
+          <div className="flex items-center gap-2 md:hidden">
+            <InstallAppButton />
+            <button className="grid size-11 place-items-center rounded-xl border border-border" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen((v) => !v)}>
             {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
             <span className="sr-only">{t('nav.menu')}</span>
-          </button>
+            </button>
+          </div>
         </div>
         {open ? (
           <nav id="mobile-nav" aria-label="Main" className="grid border-t border-border md:hidden" onClick={() => setOpen(false)}>
@@ -332,10 +337,13 @@ export function AppShell({ children }: { children?: ReactNode }) {
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-white px-4 md:hidden">
             <BrandLink to="/app" size="sm" />
-            <button className="grid size-11 place-items-center rounded-xl" aria-expanded={open} aria-controls="app-drawer" onClick={() => setOpen(true)}>
-              <Menu className="size-6" aria-hidden />
-              <span className="sr-only">{t('nav.menu')}</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <InstallAppButton />
+              <button className="grid size-11 place-items-center rounded-xl" aria-expanded={open} aria-controls="app-drawer" onClick={() => setOpen(true)}>
+                <Menu className="size-6" aria-hidden />
+                <span className="sr-only">{t('nav.menu')}</span>
+              </button>
+            </div>
           </header>
           {open ? (
             <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Menu" id="app-drawer">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Check, Search, Smartphone, X } from 'lucide-react';
+import { InstallAppButton } from '../../components/install';
 import { Button, Input, LinkButton } from '../../components/ui';
 import { useConfig } from '../../lib/auth';
 
@@ -92,6 +93,12 @@ export default function Landing() {
             <p className="mt-4 text-sm text-muted">
               Or <Link to="/find" className="font-semibold text-primary-700 underline underline-offset-2">browse all verified pharmacies</Link>. No account needed.
             </p>
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-border pt-5">
+              <LinkButton to="/login" variant="green">
+                Sign in for reminders, water and steps
+              </LinkButton>
+              <InstallAppButton size="md" />
+            </div>
           </div>
           <SmsExample />
         </div>

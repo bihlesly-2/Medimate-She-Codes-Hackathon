@@ -2,7 +2,7 @@
   "name": "MEDIMATE: Track • Remind • Live Healthier",
   "short_name": "MEDIMATE",
   "description": "Find verified pharmacies, compare reported prices, medicine reminders and a simple health log.",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "background_color": "#F7FAFC",
