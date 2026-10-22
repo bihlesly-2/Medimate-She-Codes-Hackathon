@@ -30,6 +30,7 @@ const History = lazy(() => import('./pages/app/History'));
 const Care = lazy(() => import('./pages/app/Care'));
 const Messages = lazy(() => import('./pages/app/Messages').then((m) => ({ default: m.MessagesPage })));
 const ThreadPage = lazy(() => import('./pages/app/Messages').then((m) => ({ default: m.ThreadPage })));
+const Me = lazy(() => import('./pages/app/Me'));
 const Notifications = lazy(() => import('./pages/app/Notifications'));
 const Settings = lazy(() => import('./pages/app/Settings'));
 const Billing = lazy(() => import('./pages/app/Billing').then((m) => ({ default: m.BillingPage })));
@@ -129,6 +130,7 @@ export function AppRouter() {
             <Route path="app/care" element={<Care />} />
             <Route path="app/messages" element={<Messages />} />
             <Route path="app/messages/:id" element={<ThreadPage />} />
+            <Route path="app/me" element={<Me />} />
             <Route path="app/notifications" element={<Notifications />} />
             <Route path="app/settings" element={<Settings />} />
             <Route path="app/billing" element={<Billing />} />

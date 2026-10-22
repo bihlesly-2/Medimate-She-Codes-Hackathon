@@ -1,265 +1,340 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Clock, Crosshair, Map as MapIcon, MapPin, Phone, Search, Tag } from 'lucide-react';
-import { Badge, Button, Chip, EmptyState, Input, List, ListItem, ListRow, Notice, QueryView, Skeleton, StockBadge, Tabs } from '../../components/ui';
+import { Car, Clock, Footprints, LocateFixed, Map as MapIcon, Navigation, Phone, Search, Tag, X } from 'lucide-react';
+import { Badge, Button, Chip, EmptyState, Input, Notice, QueryView, Skeleton, StockBadge, Tabs, cx } from '../../components/ui';
 import { api } from '../../lib/api';
 import { money } from '../../lib/format';
 import type { Offer, PharmacyPublic, SearchResult } from '../../lib/types';
 
 const PharmacyMap = lazy(() => import('../../components/PharmacyMap'));
 
-function OpenBadge({ open }: { open: boolean | null }) {
-  if (open === null) return <Badge icon={Clock}>Hours not listed</Badge>;
-  return open ? (
-    <Badge tone="green" icon={Clock}>
-      Open now
-    </Badge>
-  ) : (
-    <Badge tone="neutral" icon={Clock}>
-      Closed now
-    </Badge>
-  );
+type Geo = { lat: number; lng: number };
+type GeoState = 'idle' | 'asking' | 'on' | 'denied' | 'unavailable';
+
+/**
+ * Rough travel times from straight-line distance (roads add about 30%). Shown as "about", never exact:
+ * walking at 4.8 km/h, a taxi or moto in town at about 20 km/h plus a short wait.
+ */
+function travel(km: number) {
+  const road = km * 1.3;
+  return { walk: Math.max(1, Math.round((road / 4.8) * 60)), ride: Math.max(2, Math.round((road / 20) * 60) + 2) };
 }
 
-function OfferRow({ o }: { o: Offer }) {
+function directionsUrl(p: PharmacyPublic, mode: 'walking' | 'driving') {
+  const dest = p.lat != null && p.lng != null ? `${p.lat},${p.lng}` : encodeURIComponent(`${p.address}, ${p.town}`);
+  return `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=${mode}`;
+}
+
+const POPULAR = ['Paracetamol', 'Amoxicillin', 'ORS', 'Metformin', 'Ibuprofen'];
+
+function useGeo(): [Geo | null, GeoState, () => void] {
+  const [geo, setGeo] = useState<Geo | null>(null);
+  const [state, setState] = useState<GeoState>('idle');
+  const ask = () => {
+    if (!('geolocation' in navigator)) return setState('unavailable');
+    setState('asking');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setState('on');
+      },
+      (err) => setState(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable'),
+      { timeout: 10_000, maximumAge: 5 * 60_000 },
+    );
+  };
+  // Ask automatically when the person already allowed location for this site.
+  useEffect(() => {
+    void navigator.permissions
+      ?.query({ name: 'geolocation' as PermissionName })
+      .then((p) => {
+        if (p.state === 'granted') ask();
+        if (p.state === 'denied') setState('denied');
+      })
+      .catch(() => undefined);
+  }, []);
+  return [geo, state, ask];
+}
+
+function OfferCard({ o, best }: { o: Offer; best?: boolean }) {
+  const p = o.pharmacy;
+  const t = p.distanceKm != null ? travel(p.distanceKm) : null;
   return (
-    <ListItem>
+    <li className={cx('card-3d rounded-[var(--radius-card)] bg-white p-4', best && 'border-secondary-400')}>
+      {best ? (
+        <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-secondary-50 px-2.5 py-0.5 text-xs font-extrabold text-secondary-700">Best option for you</span>
+      ) : null}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link to={`/pharmacies/${o.pharmacy.id}`} className="font-bold text-ink hover:text-primary-700 hover:underline">
-            {o.pharmacy.name}
+          <Link to={`/pharmacies/${p.id}`} className="font-brand text-lg font-extrabold leading-tight text-ink hover:text-primary-700">
+            {p.name}
           </Link>
           <p className="text-sm text-muted">
-            {o.pharmacy.area}, {o.pharmacy.town}
-            {o.pharmacy.distanceKm != null ? ` · ${o.pharmacy.distanceKm} km` : ''}
+            {p.area}, {p.town}
           </p>
         </div>
-        <p className="shrink-0 text-lg font-bold text-ink">{money(o.price, o.currency)}</p>
-      </div>
-      <p className="mt-1.5 text-sm font-semibold text-ink">{o.medicine.label}</p>
-      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-        <StockBadge state={o.stockState} stale={o.stale} />
-        <OpenBadge open={o.pharmacy.openNow} />
-        {o.lowest ? (
-          <Badge tone="blue" icon={Tag}>
-            Lowest listed price
-          </Badge>
-        ) : null}
-      </div>
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="text-xs text-muted">
-          Reported {o.ageLabel} · {new Date(o.updatedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+        <p className="shrink-0 text-right">
+          <span className="block font-brand text-xl font-extrabold text-ink">{money(o.price, o.currency)}</span>
+          {o.lowest ? (
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-primary-700">
+              <Tag className="size-3.5" aria-hidden /> Lowest price
+            </span>
+          ) : null}
         </p>
-        <a href={`tel:${o.pharmacy.phone}`} className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-semibold text-primary-700 hover:bg-primary-50">
-          <Phone className="size-4" aria-hidden /> Call
+      </div>
+
+      {t ? (
+        <div className="mt-3 grid grid-cols-3 gap-2 rounded-2xl bg-sky p-2 text-center">
+          <span>
+            <span className="block font-brand text-lg font-extrabold text-primary-700">{p.distanceKm} km</span>
+            <span className="text-[11px] font-bold text-muted">away</span>
+          </span>
+          <span>
+            <span className="flex items-center justify-center gap-1 font-brand text-lg font-extrabold text-ink">
+              <Car className="size-4" aria-hidden /> {t.ride}′
+            </span>
+            <span className="text-[11px] font-bold text-muted">by taxi</span>
+          </span>
+          <span>
+            <span className="flex items-center justify-center gap-1 font-brand text-lg font-extrabold text-ink">
+              <Footprints className="size-4" aria-hidden /> {t.walk}′
+            </span>
+            <span className="text-[11px] font-bold text-muted">walking</span>
+          </span>
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <StockBadge state={o.stockState} stale={o.stale} />
+        <Badge tone={p.openNow ? 'green' : 'neutral'} icon={Clock}>
+          {p.openNow === null ? 'Hours not listed' : p.openNow ? 'Open now' : 'Closed now'}
+        </Badge>
+        <span className="text-xs text-muted">{o.medicine.label} · reported {o.ageLabel}</span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+        <a href={directionsUrl(p, t && t.walk <= 20 ? 'walking' : 'driving')} target="_blank" rel="noreferrer noopener" className="btn-3d inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-secondary-600 font-brand font-extrabold text-white [--edge:#0e4f22]">
+          <Navigation className="size-5" aria-hidden /> Directions
+        </a>
+        <a href={`tel:${p.phone}`} className="btn-3d inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-border bg-white px-4 font-brand font-extrabold text-primary-700 [--edge:var(--color-border)]" aria-label={`Call ${p.name}`}>
+          <Phone className="size-5" aria-hidden /> Call
         </a>
       </div>
-    </ListItem>
+    </li>
   );
 }
 
 export default function Find() {
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
-  const [area, setArea] = useState(params.get('area') ?? '');
+  const [focused, setFocused] = useState(false);
   const [view, setView] = useState<'list' | 'map'>('list');
-  const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
-  const [geoMsg, setGeoMsg] = useState<string | null>(null);
-  const sort = (params.get('sort') as 'price' | 'distance' | 'freshness') ?? 'freshness';
-  const openNow = params.get('openNow') === 'true';
-  const includeStale = params.get('includeStale') === 'true';
-  const maxPrice = params.get('maxPrice') ?? '';
+  const [geo, geoState, askGeo] = useGeo();
+  const active = params.get('q') ?? '';
+  const sort = (params.get('sort') as 'price' | 'distance' | null) ?? (geo ? 'distance' : 'price');
 
-  const query = new URLSearchParams();
-  for (const k of ['q', 'area', 'sort', 'openNow', 'includeStale', 'maxPrice']) {
-    const v = params.get(k);
-    if (v) query.set(k, v);
-  }
+  const query = new URLSearchParams({ q: active, sort, includeStale: 'false' });
   if (geo) {
     query.set('lat', String(geo.lat));
     query.set('lng', String(geo.lng));
   }
-  const hasQuery = Boolean(params.get('q'));
-  const search = useQuery({
-    queryKey: ['search', query.toString()],
-    queryFn: () => api<SearchResult>(`/pharmacies/search?${query}`),
-    enabled: hasQuery,
+  const search = useQuery({ queryKey: ['search', query.toString()], queryFn: () => api<SearchResult>(`/pharmacies/search?${query}`), enabled: Boolean(active) });
+  const suggestions = useQuery({
+    queryKey: ['medicines', q.trim()],
+    queryFn: () => api<{ items: { id: string; label: string; name: string; strength: string }[] }>(`/medicines?q=${encodeURIComponent(q.trim())}`),
+    enabled: focused && q.trim().length >= 2,
+    staleTime: 60_000,
   });
-  const browse = useQuery({
-    queryKey: ['pharmacies', params.get('area') ?? ''],
-    queryFn: () => api<{ items: PharmacyPublic[] }>(`/pharmacies${params.get('area') ? `?area=${encodeURIComponent(params.get('area')!)}` : ''}`),
-    enabled: !hasQuery,
-  });
+  const nearby = useQuery({ queryKey: ['pharmacies', ''], queryFn: () => api<{ items: PharmacyPublic[] }>('/pharmacies'), enabled: !active });
 
-  const set = (k: string, v: string | null) => {
+  const run = (term: string) => {
+    const t = term.trim();
+    setQ(t);
+    setFocused(false);
+    if (!geo && geoState === 'idle') askGeo();
     const next = new URLSearchParams(params);
-    if (v) next.set(k, v);
-    else next.delete(k);
+    if (t) next.set('q', t);
+    else next.delete('q');
+    setParams(next);
+  };
+  const setSort = (s: 'price' | 'distance') => {
+    if (s === 'distance' && !geo) askGeo();
+    const next = new URLSearchParams(params);
+    next.set('sort', s);
     setParams(next, { replace: true });
   };
 
   const mapPharmacies = useMemo(() => {
-    if (hasQuery) {
+    if (active) {
       const seen = new Map<string, PharmacyPublic>();
       for (const o of search.data?.items ?? []) seen.set(o.pharmacy.id, o.pharmacy);
       return [...seen.values()];
     }
-    return browse.data?.items ?? [];
-  }, [hasQuery, search.data, browse.data]);
+    return nearby.data?.items ?? [];
+  }, [active, search.data, nearby.data]);
 
-  const locate = () => {
-    if (!('geolocation' in navigator)) return setGeoMsg('Location is not available on this device. You can still sort by price or freshness.');
-    setGeoMsg('Finding your location…');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setGeoMsg('Using your current location for distances. It is not stored.');
-        set('sort', 'distance');
-      },
-      () => setGeoMsg('We could not get your location. Results still work without it.'),
-      { timeout: 8000 },
-    );
-  };
+  const items = search.data?.items ?? [];
+  const available = items.filter((o) => o.stockState === 'in_stock' || o.stockState === 'low');
+  const best = available.length ? [...available].sort((a, b) => (a.pharmacy.distanceKm ?? 99) - (b.pharmacy.distanceKm ?? 99) || (a.price ?? 1e9) - (b.price ?? 1e9))[0] : undefined;
+  const rest = items.filter((o) => o !== best);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
-      <h1 className="text-2xl font-bold text-ink sm:text-3xl">Find a pharmacy</h1>
-      <p className="mt-1 text-sm text-muted">
-        Only pharmacies checked by a MEDIMATE admin appear. Stock and prices are what each pharmacy <strong>last reported</strong>, so call before you travel.
-      </p>
+    <div className="mx-auto max-w-2xl px-4 py-6">
+      <h1 className="text-[28px] leading-tight">Find your medicine</h1>
+      <p className="mt-1 text-sm text-muted">Type the medicine. We show verified pharmacies that have it, the price, and how to get there.</p>
 
       <form
         role="search"
-        className="mt-5 grid gap-2 sm:grid-cols-[1.3fr_1fr_auto]"
+        className="relative mt-4"
         onSubmit={(e) => {
           e.preventDefault();
-          const next = new URLSearchParams(params);
-          if (q.trim()) next.set('q', q.trim());
-          else next.delete('q');
-          if (area.trim()) next.set('area', area.trim());
-          else next.delete('area');
-          setParams(next);
+          run(q);
         }}
       >
         <label htmlFor="find-q" className="sr-only">
           Medicine name
         </label>
-        <Input id="find-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Medicine, e.g. paracetamol 500" />
-        <label htmlFor="find-area" className="sr-only">
-          Area or town
-        </label>
-        <Input id="find-area" value={area} onChange={(e) => setArea(e.target.value)} placeholder="Area or town (optional)" />
-        <Button type="submit" icon={Search}>
-          Search
+        <Search className="pointer-events-none absolute left-4 top-[26px] size-5 -translate-y-1/2 text-muted" aria-hidden />
+        <Input
+          id="find-q"
+          value={q}
+          autoComplete="off"
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="e.g. paracetamol"
+          className="!min-h-[52px] rounded-2xl border-2 pl-12 pr-24 text-[17px]"
+        />
+        {q ? (
+          <button type="button" onClick={() => setQ('')} className="absolute right-[76px] top-[26px] grid size-8 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-slate-100" aria-label="Clear">
+            <X className="size-4" aria-hidden />
+          </button>
+        ) : null}
+        <Button type="submit" size="sm" className="absolute right-1.5 top-[26px] -translate-y-1/2">
+          Go
         </Button>
+        {focused && suggestions.data?.items.length ? (
+          <ul className="card-3d absolute inset-x-0 top-[58px] z-20 overflow-hidden rounded-2xl bg-white" role="listbox" aria-label="Suggestions">
+            {suggestions.data.items.slice(0, 6).map((m) => (
+              <li key={m.id}>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => run(`${m.name} ${m.strength}`.trim())} className="flex min-h-12 w-full items-center gap-3 px-4 text-left hover:bg-sky">
+                  <Search className="size-4 text-muted" aria-hidden />
+                  <span className="font-semibold text-ink">{m.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </form>
 
-      <div className="scrollbar-none -mx-4 mt-4 flex gap-2 overflow-x-auto px-4" role="group" aria-label="Sort results">
-        <Chip active={sort === 'freshness'} onClick={() => set('sort', null)}>
-          Most recent
-        </Chip>
-        <Chip active={sort === 'price'} onClick={() => set('sort', 'price')}>
-          Lowest price
-        </Chip>
-        <Chip active={sort === 'distance'} onClick={() => (geo ? set('sort', 'distance') : locate())} icon={Crosshair}>
-          Nearest
-        </Chip>
-        <Chip active={openNow} onClick={() => set('openNow', openNow ? null : 'true')}>
-          Open now
-        </Chip>
-        <Chip active={includeStale} onClick={() => set('includeStale', includeStale ? null : 'true')}>
-          Include older reports
-        </Chip>
+      {/* Location status */}
+      <div className="mt-3">
+        {geoState === 'on' ? (
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-secondary-700">
+            <LocateFixed className="size-4" aria-hidden /> Using your location for distance and time. It is not stored.
+          </p>
+        ) : geoState === 'asking' ? (
+          <p className="text-sm text-muted">Finding your location…</p>
+        ) : geoState === 'denied' ? (
+          <p className="text-sm text-muted">Location is blocked, so results are sorted by price. Allow location for this site to see distances.</p>
+        ) : geoState === 'unavailable' ? (
+          <p className="text-sm text-muted">We could not get your location. Results still work, sorted by price.</p>
+        ) : (
+          <button type="button" onClick={askGeo} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border-2 border-b-4 border-border bg-white px-3 text-sm font-bold text-primary-700">
+            <LocateFixed className="size-4" aria-hidden /> Use my location for distances
+          </button>
+        )}
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <label className="inline-flex items-center gap-2 whitespace-nowrap text-sm text-muted">
-          Max price
-          <Input type="number" min={0} inputMode="numeric" placeholder="FCFA" aria-label="Maximum price in FCFA" className="!min-h-10 w-24" value={maxPrice} onChange={(e) => set('maxPrice', e.target.value || null)} />
-        </label>
-        <Tabs
-          label="View"
-          value={view}
-          onChange={setView}
-          items={[
-            { value: 'list', label: 'List' },
-            { value: 'map', label: 'Map' },
-          ]}
-        />
-      </div>
-      {geoMsg ? <p className="mt-2 text-xs text-muted">{geoMsg}</p> : null}
 
-      <div className="mt-5">
-        {view === 'map' ? (
-          <div className="mb-4">
-            <Suspense fallback={<Skeleton className="h-[320px]" />}>
-              <PharmacyMap pharmacies={mapPharmacies} />
-            </Suspense>
+      {!active ? (
+        <>
+          <h2 className="mb-2 mt-6 text-lg">Popular searches</h2>
+          <div className="flex flex-wrap gap-2">
+            {POPULAR.map((m) => (
+              <Chip key={m} onClick={() => run(m)}>
+                {m}
+              </Chip>
+            ))}
           </div>
-        ) : null}
-
-        {hasQuery ? (
+          <h2 className="mb-2 mt-7 text-lg">Verified pharmacies</h2>
+          {nearby.isPending ? (
+            <Skeleton className="h-40" />
+          ) : (
+            <ul className="grid gap-3">
+              {(nearby.data?.items ?? []).map((p) => (
+                <li key={p.id} className="card-3d flex items-center justify-between gap-3 rounded-2xl bg-white p-4">
+                  <Link to={`/pharmacies/${p.id}`} className="min-w-0">
+                    <span className="block font-brand font-extrabold text-ink">{p.name}</span>
+                    <span className="block text-sm text-muted">
+                      {p.area} · {p.openNow === null ? 'hours not listed' : p.openNow ? 'open now' : 'closed now'}
+                    </span>
+                  </Link>
+                  <a href={directionsUrl(p, 'driving')} target="_blank" rel="noreferrer noopener" className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary-50 text-secondary-700" aria-label={`Directions to ${p.name}`}>
+                    <Navigation className="size-5" aria-hidden />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <div className="mt-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex gap-2" role="group" aria-label="Sort">
+              <Chip active={sort === 'distance'} onClick={() => setSort('distance')}>
+                Nearest
+              </Chip>
+              <Chip active={sort === 'price'} onClick={() => setSort('price')}>
+                Cheapest
+              </Chip>
+            </div>
+            <Tabs
+              label="View"
+              value={view}
+              onChange={setView}
+              items={[
+                { value: 'list', label: 'List' },
+                { value: 'map', label: 'Map' },
+              ]}
+            />
+          </div>
+          {view === 'map' ? (
+            <div className="mb-4">
+              <Suspense fallback={<Skeleton className="h-[320px]" />}>
+                <PharmacyMap pharmacies={mapPharmacies} />
+              </Suspense>
+            </div>
+          ) : null}
           <QueryView query={search}>
             {(data) =>
               data.unknownMedicine ? (
-                <EmptyState icon={Search} title="We could not find that medicine">
-                  Check the spelling, or search by generic name.{' '}
-                  <Link className="font-semibold text-primary-700 underline" to="/medicines">
-                    Browse the medicine list
-                  </Link>
-                  .
+                <EmptyState icon={Search} title="We don’t know that medicine yet">
+                  Check the spelling, or try the generic name (for example paracetamol instead of a brand).
+                </EmptyState>
+              ) : items.length === 0 ? (
+                <EmptyState icon={MapIcon} title="No pharmacy reported it recently">
+                  No verified pharmacy reported this medicine in the last 48 hours. Call a pharmacy directly, or try another medicine.
                 </EmptyState>
               ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted" aria-live="polite">
-                    {data.total} result{data.total === 1 ? '' : 's'} for {data.medicines.map((m) => m.label).join(', ')}
-                    {data.staleHidden ? ` · ${data.staleHidden} older report${data.staleHidden === 1 ? '' : 's'} hidden` : ''}
+                <>
+                  <p className="mb-3 text-sm text-muted" aria-live="polite">
+                    {data.total} pharmac{data.total === 1 ? 'y has' : 'ies have'} {data.medicines.map((m) => m.label).join(', ')}
                   </p>
-                  {data.items.length === 0 ? (
-                    <EmptyState icon={MapIcon} title="No recent reports match">
-                      No verified pharmacy has reported this medicine recently{params.get('area') ? ' in this area' : ''}. Try another area, include older reports, or ask a pharmacy directly.
-                    </EmptyState>
-                  ) : (
-                    <List label="Pharmacies that reported this medicine">
-                      {data.items.map((o) => (
-                        <OfferRow key={o.stockId} o={o} />
-                      ))}
-                    </List>
-                  )}
-                  <Notice title="About price comparison">
-                    “Lowest listed price” compares only the same medicine, strength and form, among reports from the last 48 hours that were in stock or low. Prices change, so confirm with the pharmacy.
-                  </Notice>
-                </div>
+                  <ul className="grid gap-4">
+                    {best ? <OfferCard o={best} best /> : null}
+                    {rest.map((o) => (
+                      <OfferCard key={o.stockId} o={o} />
+                    ))}
+                  </ul>
+                  <div className="mt-4">
+                    <Notice>Prices and stock are what each pharmacy last reported. Times are estimates. Call before you go.</Notice>
+                  </div>
+                </>
               )
             }
           </QueryView>
-        ) : (
-          <QueryView query={browse}>
-            {(data) => (
-              <>
-                <p className="mb-3 text-sm text-muted">
-                  {data.items.length} verified pharmac{data.items.length === 1 ? 'y' : 'ies'}. Search a medicine to see reported stock and prices.
-                </p>
-                {data.items.length === 0 ? (
-                  <EmptyState icon={MapPin} title="No verified pharmacies in this area yet" />
-                ) : (
-                  <List label="Verified pharmacies">
-                    {data.items.map((p) => (
-                      <ListRow
-                        key={p.id}
-                        to={`/pharmacies/${p.id}`}
-                        icon={MapPin}
-                        title={p.name}
-                        detail={`${p.area}, ${p.town} · ${p.openNow === null ? 'hours not listed' : p.openNow ? 'open now' : 'closed now'}`}
-                      />
-                    ))}
-                  </List>
-                )}
-              </>
-            )}
-          </QueryView>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

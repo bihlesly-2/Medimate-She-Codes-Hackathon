@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -17,7 +17,6 @@ import {
   Home,
   LayoutDashboard,
   LogOut,
-  Menu,
   MessageSquare,
   Pill,
   Search,
@@ -28,7 +27,6 @@ import {
   Upload,
   User,
   Users,
-  X,
   type LucideIcon,
 } from 'lucide-react';
 import { api } from '../lib/api';
@@ -93,7 +91,6 @@ export function Footer() {
 export function PublicLayout() {
   const { t } = useTranslation();
   const me = useMe();
-  const [open, setOpen] = useState(false);
   const links = [
     { to: '/find', label: t('nav.find') },
     { to: '/medicines', label: t('nav.medicines') },
@@ -118,27 +115,14 @@ export function PublicLayout() {
             </Link>
           </nav>
           <div className="flex items-center gap-2 md:hidden">
-            <InstallAppButton />
-            <button className="grid size-11 place-items-center rounded-xl border border-border" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen((v) => !v)}>
-            {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
-            <span className="sr-only">{t('nav.menu')}</span>
-            </button>
+            <Link to="/find" className="grid size-11 place-items-center rounded-xl text-ink hover:bg-slate-100" aria-label="Find a medicine">
+              <Search className="size-6" aria-hidden />
+            </Link>
+            <Link to={me.data ? '/app' : '/login'} className="btn-3d inline-flex min-h-10 items-center rounded-xl bg-primary-600 px-4 font-brand text-sm font-extrabold text-white [--edge:var(--color-primary-900)]">
+              {me.data ? 'Open app' : t('nav.signIn')}
+            </Link>
           </div>
         </div>
-        {open ? (
-          <nav id="mobile-nav" aria-label="Main" className="grid border-t border-border md:hidden" onClick={() => setOpen(false)}>
-            {links.map((l) => (
-              <Link key={l.to} to={l.to} className="border-b border-border px-4 py-3.5 font-semibold">
-                {l.label}
-              </Link>
-            ))}
-            <div className="p-4">
-              <Link to={me.data ? '/app' : '/login'} className="flex min-h-12 items-center justify-center rounded-xl bg-primary-600 font-semibold text-white">
-                {me.data ? 'My MEDIMATE' : t('nav.signIn')}
-              </Link>
-            </div>
-          </nav>
-        ) : null}
       </header>
       <main id="main" tabIndex={-1} className="outline-none">
         <Outlet />
@@ -268,7 +252,7 @@ function TabBar() {
     { to: '/app/reminders', label: t('nav.reminders'), icon: Bell },
     { to: '/find', label: 'Pharmacy', icon: Search },
     { to: '/app/health', label: t('nav.health'), icon: HeartPulse },
-    { to: '/app/settings', label: 'Me', icon: User },
+    { to: '/app/me', label: 'Me', icon: User },
   ];
   if (pathname.startsWith('/pharmacy') && hasRole(me, 'pharmacy')) {
     items = [
@@ -329,9 +313,7 @@ function BellLink() {
 }
 
 export function AppShell({ children }: { children?: ReactNode }) {
-  const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
-  const { t } = useTranslation();
   return (
     <div className="min-h-dvh">
       <SkipLink />
@@ -349,27 +331,8 @@ export function AppShell({ children }: { children?: ReactNode }) {
             <div className="flex items-center gap-1">
               <InstallAppButton />
               <BellLink />
-              <button className="grid size-11 place-items-center rounded-xl" aria-expanded={open} aria-controls="app-drawer" onClick={() => setOpen(true)}>
-                <Menu className="size-6" aria-hidden />
-                <span className="sr-only">{t('nav.menu')}</span>
-              </button>
             </div>
           </header>
-          {open ? (
-            <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Menu" id="app-drawer">
-              <button className="absolute inset-0 bg-slate-900/40" aria-label="Close menu" onClick={() => setOpen(false)} />
-              <div className="absolute inset-y-0 right-0 flex w-[min(86vw,320px)] flex-col bg-white pt-4 shadow-[var(--shadow-float)]">
-                <div className="flex items-center justify-between px-5 pb-4">
-                  <Wordmark size="sm" />
-                  <button className="grid size-11 place-items-center rounded-xl" onClick={() => setOpen(false)}>
-                    <X className="size-6" aria-hidden />
-                    <span className="sr-only">{t('actions.close')}</span>
-                  </button>
-                </div>
-                <SideNav onNavigate={() => setOpen(false)} />
-              </div>
-            </div>
-          ) : null}
           <main id="main" tabIndex={-1} key={pathname} className="fade-in px-4 pb-28 pt-4 outline-none sm:px-6 sm:pt-6 md:pb-12 lg:px-8">
             {children ?? <Outlet />}
           </main>
