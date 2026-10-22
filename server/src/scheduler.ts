@@ -2,6 +2,7 @@ import { and, isNotNull, lte } from 'drizzle-orm';
 import { smsLogs } from './db/schema';
 import type { Deps } from './types';
 import { reconcilePendingPayments } from './services/billing';
+import { runNudges } from './services/nudges';
 import { runReminderTick, type TickReport } from './services/reminders';
 
 /**
@@ -14,8 +15,12 @@ import { runReminderTick, type TickReport } from './services/reminders';
 let lastTick = 0;
 let running: Promise<unknown> | null = null;
 
-export async function fullTick(deps: Deps): Promise<TickReport & { paymentsChecked: number; smsBodiesPurged: number }> {
+export async function fullTick(deps: Deps): Promise<TickReport & { paymentsChecked: number; smsBodiesPurged: number; nudges: number }> {
   const report = await runReminderTick(deps);
+  const nudges = await runNudges(deps).catch((e) => {
+    deps.logger.error('nudges_failed', { error: e instanceof Error ? e.message : String(e) });
+    return 0;
+  });
   const paymentsChecked = await reconcilePendingPayments(deps);
   const purged = await deps.db
     .update(smsLogs)
@@ -23,7 +28,7 @@ export async function fullTick(deps: Deps): Promise<TickReport & { paymentsCheck
     .where(and(isNotNull(smsLogs.body), lte(smsLogs.bodyExpiresAt, deps.clock.now())))
     .returning({ id: smsLogs.id });
   lastTick = Date.now();
-  return { ...report, paymentsChecked, smsBodiesPurged: purged.length };
+  return { ...report, paymentsChecked, smsBodiesPurged: purged.length, nudges };
 }
 
 export async function maybeTick(deps: Deps, minIntervalMs = 30_000) {

@@ -20,6 +20,7 @@ import { refCode } from '../lib/crypto';
 import { badRequest, notFound } from '../lib/errors';
 import type { Deps } from '../types';
 import { sendSms } from './messaging';
+import { notifyUser } from './notify';
 import { getUser, hasConsent, userHasFeature } from './users';
 
 type Occurrence = typeof reminderOccurrences.$inferSelect;
@@ -234,6 +235,14 @@ async function deliver(deps: Deps, o: Occurrence, now: Date): Promise<'sent' | '
     await deps.db.update(reminderOccurrences).set({ deliveryStatus: 'web_only' }).where(eq(reminderOccurrences.id, o.id));
   }
   await deps.db.insert(reminderEvents).values({ occurrenceId: o.id, userId: o.userId, action: 'sent', channel, createdAt: now });
+  const time = localTime(claimed.scheduledFor, user?.timezone ?? 'Africa/Douala');
+  const note =
+    o.kind === 'refill'
+      ? { title: 'Refill coming up', body: `Your refill date is ${plan?.refillDate ?? 'soon'}. Plan a pharmacy visit.`, url: '/find' }
+      : o.kind === 'checkup'
+        ? { title: 'Checkup tomorrow', body: checkup ? `${checkup.title}, ${localTime(checkup.dueAt, user?.timezone ?? 'Africa/Douala')}` : 'You have a checkup tomorrow.', url: '/app/checkups' }
+        : { title: `${time} · Time for your medicine`, body: 'Tap to answer Taken or Skip.', url: `/app?o=${o.id}` };
+  await notifyUser(deps, o.userId, { kind: o.kind === 'medication' ? 'reminder' : o.kind === 'refill' ? 'refill' : 'checkup', ...note, dedupeKey: `occ:${o.id}`, occurrenceId: o.kind === 'medication' ? o.id : undefined });
   return 'sent';
 }
 
@@ -319,6 +328,7 @@ export async function runReminderTick(deps: Deps): Promise<TickReport> {
       await sendSms(deps, { to: user.phone, body: msg(user.language, 'reminder_followup_sms', { ref: o.refCode }), kind: 'routine', userId: o.userId, command: 'REMINDER:followup' });
     }
     await deps.db.insert(reminderEvents).values({ occurrenceId: o.id, userId: o.userId, action: 'followup', channel, createdAt: now });
+    await notifyUser(deps, o.userId, { kind: 'followup', title: 'Did you take your medicine?', body: 'Your reminder is still waiting. Tap to answer.', url: `/app?o=${o.id}`, dedupeKey: `fu:${o.id}`, occurrenceId: o.id });
     report.followups++;
   }
 
@@ -356,6 +366,13 @@ export async function runReminderTick(deps: Deps): Promise<TickReport> {
     const name = patient?.displayName?.split(' ')[0] || 'your contact';
     let smsSent = 0;
     for (const l of eligible) {
+      await notifyUser(deps, l.caretaker.id, {
+        kind: 'caretaker',
+        title: `${name} has not confirmed a reminder`,
+        body: 'You may want to check in with them.',
+        url: `/care/${o.userId}`,
+        dedupeKey: `care:${o.id}:${l.caretaker.id}`,
+      });
       if (l.caretaker.phone && (await hasConsent(deps.db, l.caretaker.id, 'sms_messages'))) {
         await sendSms(deps, {
           to: l.caretaker.phone,

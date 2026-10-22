@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { WATER_BOTTLE_ML, WATER_GLASS_ML } from '@medimate/shared';
 import { CalendarCheck, Check, Crown, Droplets, Flame, Footprints, Lock, MapPin, Pill, Plus, Search, Sparkles, Users } from 'lucide-react';
@@ -121,6 +121,14 @@ export default function Dashboard() {
 
   const [sheet, setSheet] = useState<{ kind: 'med'; o: Occurrence } | { kind: 'water' } | { kind: 'steps' } | null>(null);
   const [stepsInput, setStepsInput] = useState('');
+  const [params, setParams] = useSearchParams();
+  const openId = params.get('o');
+  useEffect(() => {
+    if (!openId || !reminders.data) return;
+    const o = reminders.data.items.find((x) => x.id === openId);
+    if (o) setSheet({ kind: 'med', o });
+    setParams({}, { replace: true });
+  }, [openId, reminders.data, setParams]);
 
   const addWater = useMutation({
     mutationFn: (ml: number) => post('/water', { amountMl: ml }),

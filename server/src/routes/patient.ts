@@ -30,6 +30,7 @@ import { param, parse, requireAuth } from '../lib/http';
 import { authRequired, consent, feature } from '../middleware';
 import { deleteAccount, exportAccount, historyPdf, type ExportSection } from '../services/account';
 import { linkFirebase, linkPhone, requestOtp } from '../services/auth';
+import { listNotifications, markNotificationsRead, notifyUser, removePushSubscription, savePushSubscription } from '../services/notify';
 import { confirmDemoPayment, refreshPayment, startCheckout, subscriptionStatus } from '../services/billing';
 import { inviteCaretaker, listLinksForPatient, revokeLink, updatePermissions } from '../services/care';
 import { closeInquiry, createInquiry, getThread, listPatientInquiries, postMessage } from '../services/inquiries';
@@ -87,7 +88,17 @@ export function patientRoutes(deps: Deps) {
       .update(users)
       .set({ ...fields, ...(completeOnboarding ? { onboardedAt: deps.clock.now() } : {}), updatedAt: deps.clock.now() })
       .where(eq(users.id, auth.userId));
-    res.json(publicUser((await getUser(deps.db, auth.userId))!));
+    const u = (await getUser(deps.db, auth.userId))!;
+    if (completeOnboarding) {
+      await notifyUser(deps, auth.userId, {
+        kind: 'welcome',
+        title: `Welcome to MEDIMATE, ${u.displayName?.split(' ')[0] ?? 'friend'}!`,
+        body: 'Add a medicine from your prescription and we will remind you on time. Your water and steps goals are set.',
+        url: '/app/medicines/new',
+        dedupeKey: `welcome:${auth.userId}`,
+      });
+    }
+    res.json(publicUser(u));
   });
   r.get('/me/consents', async (req, res) => {
     res.json(await getConsentMap(deps.db, requireAuth(req).userId));
@@ -112,6 +123,25 @@ export function patientRoutes(deps: Deps) {
     const body = parse(otpVerifySchema, req.body);
     const u = await linkPhone(deps, requireAuth(req).userId, body.phone, body.code, req.requestId);
     res.json(publicUser(u!));
+  });
+
+  // ---- notifications: push subscriptions and the in-app inbox
+  r.post('/me/push', async (req, res) => {
+    res.json(await savePushSubscription(deps, requireAuth(req).userId, req.body, req.get('user-agent')));
+  });
+  r.post('/me/push/remove', async (req, res) => {
+    const body = parse(z.object({ endpoint: z.string().url().max(1000) }), req.body);
+    res.json(await removePushSubscription(deps, requireAuth(req).userId, body.endpoint));
+  });
+  r.post('/me/push/test', async (req, res) => {
+    const auth = requireAuth(req);
+    res.json(await notifyUser(deps, auth.userId, { kind: 'system', title: 'Test from MEDIMATE', body: 'Notifications work on this device.', url: '/app' }));
+  });
+  r.get('/me/notifications', async (req, res) => {
+    res.json(await listNotifications(deps, requireAuth(req).userId));
+  });
+  r.post('/me/notifications/read', async (req, res) => {
+    res.json(await markNotificationsRead(deps, requireAuth(req).userId));
   });
 
   r.get('/me/export', async (req, res) => {

@@ -8,10 +8,11 @@ import { FakeClock } from '../src/lib/clock';
 import { createLogger } from '../src/lib/logger';
 import type { MessagingProvider } from '../src/providers/messaging';
 import type { PaymentProvider } from '../src/providers/payments';
+import type { PushSender } from '../src/providers/push';
 
 export const T0 = '2026-10-21T10:00:00Z';
 
-export async function setup(opts: { env?: Record<string, string>; messaging?: MessagingProvider; payments?: PaymentProvider } = {}) {
+export async function setup(opts: { env?: Record<string, string>; messaging?: MessagingProvider; payments?: PaymentProvider; push?: PushSender } = {}) {
   const clock = new FakeClock(Date.parse(T0));
   const config = loadConfig({
     NODE_ENV: 'test',
@@ -27,6 +28,7 @@ export async function setup(opts: { env?: Record<string, string>; messaging?: Me
     logger: createLogger({ silent: true }),
     messaging: opts.messaging,
     payments: opts.payments,
+    push: opts.push,
   });
   await database.migrate();
   await seedDemo(deps, { reset: false });

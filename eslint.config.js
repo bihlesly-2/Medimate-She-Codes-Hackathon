@@ -5,7 +5,7 @@ import globals from 'globals';
 
 export default tseslint.config(
   {
-    ignores: [
+    ignores: ['.vercel/**', 
       '**/dist/**',
       '**/node_modules/**',
       '**/.data/**',

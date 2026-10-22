@@ -7,6 +7,7 @@ import { systemClock, type Clock } from './lib/clock';
 import { createLogger, type Logger } from './lib/logger';
 import { createMessagingProvider, type MessagingProvider } from './providers/messaging';
 import { createPaymentProvider, type PaymentProvider } from './providers/payments';
+import { createPushSender, type PushSender } from './providers/push';
 import type { Deps } from './types';
 
 export interface RuntimeOptions {
@@ -16,6 +17,7 @@ export interface RuntimeOptions {
   logger?: Logger;
   messaging?: MessagingProvider;
   payments?: PaymentProvider;
+  push?: PushSender;
   poolMax?: number;
 }
 
@@ -30,6 +32,7 @@ export async function createRuntime(opts: RuntimeOptions = {}): Promise<{ deps: 
     logger: opts.logger ?? createLogger(),
     messaging: opts.messaging ?? createMessagingProvider(config),
     payments: opts.payments ?? createPaymentProvider(config),
+    push: opts.push ?? createPushSender(config),
   };
   return { deps, database };
 }

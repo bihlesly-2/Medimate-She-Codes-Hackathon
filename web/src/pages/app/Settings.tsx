@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, CreditCard, Download, Globe, KeyRound, LogOut, Mail, Phone, ShieldCheck, Store, Trash2, User } from 'lucide-react';
+import { BellRing, ChevronRight, CreditCard, Download, Globe, KeyRound, LogOut, Mail, Phone, ShieldCheck, Store, Trash2, User } from 'lucide-react';
 import { Button, Card, Dialog, Field, Input, LinkButton, Notice, PageHeader, Select, SectionTitle, Textarea, Toggle, errorMessage, useToast } from '../../components/ui';
 import { api, del, patch, post } from '../../lib/api';
 import { hasRole, useConfig, useLogout, useMe } from '../../lib/auth';
 import { UI_LANGUAGES, setUiLanguage } from '../../i18n';
 import { dateTime } from '../../lib/format';
+import { PushToggle } from './Notifications';
 
 /** Email/Google (Firebase) and a verified phone number can both point at the same MEDIMATE account. */
 function SignInMethods() {
@@ -206,8 +207,17 @@ export default function Settings() {
   const c = me.consents;
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Settings" subtitle={`Signed in as ${me.email ?? me.phone ?? 'you'}`} />
+      <PageHeader title="Me" subtitle={`Signed in as ${me.email ?? me.phone ?? 'you'}`} />
       <div className="grid gap-5">
+        <Card className="p-5">
+          <SectionTitle>
+            <span className="flex items-center gap-2">
+              <BellRing className="size-5 text-primary-600" aria-hidden /> Reminders on this phone
+            </span>
+          </SectionTitle>
+          <p className="mb-3 text-sm text-muted">Pop-up notifications for each medicine time, plus a few friendly water and steps nudges.</p>
+          <PushToggle />
+        </Card>
         <SignInMethods />
         <Card className="p-5">
           <SectionTitle>

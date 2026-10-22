@@ -213,6 +213,7 @@ function useNavGroups() {
   groups.push({
     title: 'Account',
     items: [
+      { to: '/app/notifications', label: 'Notifications', icon: Bell },
       { to: '/app/billing', label: t('nav.billing'), icon: CreditCard },
       { to: '/app/settings', label: t('nav.settings'), icon: Settings },
       { to: '/simulator', label: t('nav.simulator'), icon: Smartphone },
@@ -312,6 +313,21 @@ function TabBar() {
   );
 }
 
+/** Bell with the unread count; opens the notification inbox. */
+function BellLink() {
+  const { data: me } = useMe();
+  const q = useQuery({ queryKey: ['notifications'], queryFn: () => api<{ unread: number }>('/me/notifications'), enabled: !!me, refetchInterval: 60_000 });
+  const unread = q.data?.unread ?? 0;
+  return (
+    <Link to="/app/notifications" className="relative grid size-11 place-items-center rounded-xl text-ink hover:bg-slate-100" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}>
+      <Bell className="size-6" aria-hidden />
+      {unread ? (
+        <span className="pop absolute right-1 top-1 grid min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-extrabold text-white">{unread > 9 ? '9+' : unread}</span>
+      ) : null}
+    </Link>
+  );
+}
+
 export function AppShell({ children }: { children?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -332,6 +348,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
             <BrandLink to="/app" size="sm" />
             <div className="flex items-center gap-1">
               <InstallAppButton />
+              <BellLink />
               <button className="grid size-11 place-items-center rounded-xl" aria-expanded={open} aria-controls="app-drawer" onClick={() => setOpen(true)}>
                 <Menu className="size-6" aria-hidden />
                 <span className="sr-only">{t('nav.menu')}</span>

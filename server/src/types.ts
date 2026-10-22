@@ -4,6 +4,7 @@ import type { DB } from './db/client';
 import type { Clock } from './lib/clock';
 import type { Logger } from './lib/logger';
 import type { MessagingProvider } from './providers/messaging';
+import type { PushSender } from './providers/push';
 import type { PaymentProvider } from './providers/payments';
 
 export interface Deps {
@@ -13,6 +14,7 @@ export interface Deps {
   logger: Logger;
   messaging: MessagingProvider;
   payments: PaymentProvider;
+  push: PushSender;
 }
 
 export interface AuthInfo {

@@ -50,6 +50,13 @@ const envSchema = z.object({
   FAPSHI_API_USER: optionalString,
   FAPSHI_API_KEY: optionalString,
   FAPSHI_WEBHOOK_SECRET: optionalString,
+  /** Web Push (VAPID). Generate once with `npx web-push generate-vapid-keys`. The public key is not a secret. */
+  VAPID_PUBLIC_KEY: optionalString,
+  VAPID_PRIVATE_KEY: optionalString,
+  VAPID_SUBJECT: z.string().default('https://medimate-she-codes.vercel.app'),
+  /** Anthropic API key for the in-app assistant (Claude). Without it the assistant is hidden. */
+  ANTHROPIC_API_KEY: optionalString,
+  ASSISTANT_MODEL: z.string().default('claude-haiku-5-5'),
   REMINDER_FOLLOWUP_MINUTES: z.coerce.number().int().min(1).default(30),
   REMINDER_ESCALATE_MINUTES: z.coerce.number().int().min(1).default(60),
   REMINDER_MISSED_MINUTES: z.coerce.number().int().min(1).default(180),
@@ -124,6 +131,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
   if (env.PAYMENTS_PROVIDER === 'fapshi' && (!env.FAPSHI_API_USER || !env.FAPSHI_API_KEY)) {
     problems.push('FAPSHI_API_USER and FAPSHI_API_KEY are required when PAYMENTS_PROVIDER=fapshi.');
   }
+  if (env.VAPID_PUBLIC_KEY && !env.VAPID_PRIVATE_KEY) problems.push('VAPID_PRIVATE_KEY is required with VAPID_PUBLIC_KEY.');
   if (problems.length) throw new Error(`Configuration problems:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
 
   const { APP_ORIGIN, ...rest } = env;
@@ -150,6 +158,8 @@ export function publicConfig(config: Config) {
     paymentsEnvironment: config.PAYMENTS_PROVIDER === 'fapshi' ? config.FAPSHI_ENV : 'demo',
     smsShortCode: config.SMS_SHORT_CODE,
     ussdCode: config.USSD_CODE,
+    vapidPublicKey: config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY ? config.VAPID_PUBLIC_KEY : null,
+    assistant: Boolean(config.ANTHROPIC_API_KEY),
     firebase: config.FIREBASE_PROJECT_ID
       ? { apiKey: config.FIREBASE_API_KEY, authDomain: config.FIREBASE_AUTH_DOMAIN, projectId: config.FIREBASE_PROJECT_ID, appId: config.FIREBASE_APP_ID }
       : null,

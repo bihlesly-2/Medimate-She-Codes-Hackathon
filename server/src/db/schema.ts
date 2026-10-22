@@ -619,6 +619,48 @@ export const ussdSessions = pgTable(
   (t) => [index('ussd_sessions_phone_idx').on(t.phone, t.lastActiveAt)],
 );
 
+/** Browser push subscriptions (Web Push). One person can have several devices. */
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull().unique(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: createdAt(),
+    lastSentAt: ts('last_sent_at'),
+  },
+  (t) => [index('push_subs_user_idx').on(t.userId)],
+);
+
+/**
+ * In-app notification inbox. Every push is also stored here, so nothing is lost when a device
+ * is offline or notifications are blocked. `dedupe_key` makes nudges and welcomes send once.
+ */
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    url: text('url'),
+    dedupeKey: text('dedupe_key').unique(),
+    occurrenceId: uuid('occurrence_id'),
+    pushed: integer('pushed').notNull().default(0),
+    readAt: ts('read_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('notifications_user_idx').on(t.userId, t.createdAt)],
+);
+
 export const auditLogs = pgTable(
   'audit_logs',
   {
