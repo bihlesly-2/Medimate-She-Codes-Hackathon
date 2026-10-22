@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -100,6 +100,7 @@ export function PublicLayout() {
   return (
     <div className="min-h-dvh">
       <SkipLink />
+      <ScrollToTop />
       <DemoBanner />
       <header className="sticky top-0 z-30 border-b border-border bg-white">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
@@ -318,6 +319,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
   return (
     <div className="min-h-dvh">
       <SkipLink />
+      <ScrollToTop />
       <DemoBanner />
       <div className="mx-auto flex max-w-[1400px]">
         <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-white md:flex">
@@ -367,4 +369,13 @@ export function HealthDisclaimer() {
       {data?.healthDisclaimer ?? 'MEDIMATE does not diagnose or replace a health professional.'}
     </p>
   );
+}
+
+/** New screens open at the top, like an app (the browser keeps the old scroll position on client-side navigation). */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
 }
