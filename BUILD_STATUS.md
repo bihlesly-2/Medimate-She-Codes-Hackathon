@@ -15,6 +15,14 @@ Status labels follow `MEDIMATE_Claude_Code_Kit/MEDIMATE_EXECUTION.md` §1. Last 
 | Mobile layout | Browser preview at 375 px: Find, pharmacy detail, medicines, simulator (SMS + USSD), dashboard, reminders, medicines, health, steps, water, progress, history, checkups, caretakers, messages, billing, settings, caretaker view, pharmacy portal (overview, stock), admin (all pages) | no horizontal overflow (`scrollWidth` 375 on every page), no console errors after fixes; desktop checked for Find and Readings |
 | Playwright E2E / axe | n/a | **Not implemented** |
 
+## Live deployment (2026-10-22)
+
+https://medimate-she-codes.vercel.app (Vercel Hobby, Neon Postgres). Checked live: `/api/health` ok with database; config shows demo mode, Firebase, Fapshi sandbox, SMS simulator; search returns 4 results; phone login with demo 600000001 reaches the dashboard at 375 px; water log 201; SMS simulator `WATER 2 GLASSES` replies; USSD home menu opens. Email/Google buttons show (not signed in with a real account yet). Taken not tested live: Ama's first reminder (08:00 WAT) was not due yet. Fapshi sandbox checkout tested locally only.
+
+Deployed build is commit 5cf121a. Commits 1af6046 (unreachable-server notice) and 7a3c907 (Install app button) are **Blocked** by Vercel: Hobby only deploys private-repo commits authored by the account owner, and these are authored by CHIF3N. Fix: make the repo public, author commits as bihlesly-2, or upgrade to Pro.
+
+Fapshi: sandbox webhook URL set; webhook secret not yet set on Fapshi (webhooks get 401; payments still settle by status polling). Twilio: trial expired and unavailable in Cameroon; needs a paid upgrade.
+
 ## Phases
 
 | Phase | State |
