@@ -23,6 +23,7 @@ import {
   Settings,
   ShieldCheck,
   Smartphone,
+  Sparkles,
   Store,
   Upload,
   User,
@@ -338,8 +339,24 @@ export function AppShell({ children }: { children?: ReactNode }) {
           </main>
         </div>
       </div>
+      <AskButton />
       <TabBar />
     </div>
+  );
+}
+
+/** Floating "Ask" button for the assistant, shown on app screens when the server has it switched on. */
+function AskButton() {
+  const { data: config } = useConfig();
+  const { pathname } = useLocation();
+  if (!config?.assistant || pathname.startsWith('/app/assistant') || pathname.startsWith('/app/onboarding')) return null;
+  return (
+    <Link
+      to="/app/assistant"
+      className="btn-3d fixed bottom-[84px] right-4 z-30 inline-flex min-h-14 items-center gap-2 rounded-full bg-secondary-600 px-5 font-brand font-extrabold text-white [--edge:#0e4f22] md:bottom-6"
+    >
+      <Sparkles className="size-5" aria-hidden /> Ask
+    </Link>
   );
 }
 

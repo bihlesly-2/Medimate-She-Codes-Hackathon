@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, Bell, CalendarCheck, ClipboardList, CreditCard, Crown, FileClock, Flame, HeartHandshake, LayoutDashboard, LogOut, MessageSquare, Pill, Settings, ShieldCheck, Smartphone, Store, Users } from 'lucide-react';
+import { Activity, Bell, CalendarCheck, ClipboardList, CreditCard, Crown, FileClock, Flame, HeartHandshake, LayoutDashboard, LogOut, MessageSquare, Pill, Settings, ShieldCheck, Smartphone, Sparkles, Store, Users } from 'lucide-react';
 import { LogoMark } from '../../components/brand';
 import { InstallAppButton } from '../../components/install';
 import { List, ListRow, cx } from '../../components/ui';
@@ -75,6 +75,7 @@ export default function Me() {
 
       <h2 className="mb-2 mt-7 text-lg">Account</h2>
       <List label="Account">
+        <ListRow to="/app/assistant" icon={Sparkles} tone="green" title="Ask MEDIMATE" detail="Log things or find a medicine by just saying it" />
         <ListRow to="/app/notifications" icon={Bell} title="Notifications" detail="Pop-up reminders on this phone" />
         <ListRow to="/app/billing" icon={CreditCard} title="Plan and payments" />
         <ListRow to="/app/settings" icon={Settings} title="Settings" detail="Profile, sign-in, privacy, language" />

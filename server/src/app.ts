@@ -41,6 +41,7 @@ export function createApp(deps: Deps, opts: { rateLimits?: boolean } = {}) {
     api.use('/inquiries', limiter(60 * 60_000, 120));
     api.use('/reports', limiter(60 * 60_000, 20));
     api.use('/sim', limiter(60_000, 120));
+    api.use('/assistant', limiter(10 * 60_000, 40));
     api.use(limiter(60_000, 600));
   }
   api.use((_req, res, next) => {

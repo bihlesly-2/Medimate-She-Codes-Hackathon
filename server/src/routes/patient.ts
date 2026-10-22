@@ -30,6 +30,7 @@ import { param, parse, requireAuth } from '../lib/http';
 import { authRequired, consent, feature } from '../middleware';
 import { deleteAccount, exportAccount, historyPdf, type ExportSection } from '../services/account';
 import { linkFirebase, linkPhone, requestOtp } from '../services/auth';
+import { assistantMessageSchema, assistantReply } from '../services/assistant';
 import { listNotifications, markNotificationsRead, notifyUser, removePushSubscription, savePushSubscription } from '../services/notify';
 import { confirmDemoPayment, refreshPayment, startCheckout, subscriptionStatus } from '../services/billing';
 import { inviteCaretaker, listLinksForPatient, revokeLink, updatePermissions } from '../services/care';
@@ -136,6 +137,10 @@ export function patientRoutes(deps: Deps) {
   r.post('/me/push/test', async (req, res) => {
     const auth = requireAuth(req);
     res.json(await notifyUser(deps, auth.userId, { kind: 'system', title: 'Test from MEDIMATE', body: 'Notifications work on this device.', url: '/app' }));
+  });
+  r.post('/assistant', async (req, res) => {
+    const body = parse(assistantMessageSchema, req.body);
+    res.json(await assistantReply(deps, requireAuth(req).userId, body.messages));
   });
   r.get('/me/notifications', async (req, res) => {
     res.json(await listNotifications(deps, requireAuth(req).userId));
