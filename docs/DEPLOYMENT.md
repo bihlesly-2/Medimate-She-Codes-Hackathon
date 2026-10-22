@@ -6,7 +6,7 @@ Two supported shapes: **Vercel** (the hackathon demo) and a **long-running Node 
 
 ### How the build works
 
-`vercel.json` runs `npm ci` and `npm run vercel-build`, which runs [`scripts/vercel-build.mjs`](../scripts/vercel-build.mjs). It writes the [Build Output API v3](https://vercel.com/docs/build-output-api/v3) to `.vercel/output`:
+`vercel.json` runs `npm ci --include=dev` (build tools are devDependencies, and `NODE_ENV=production` would otherwise skip them) and `npm run vercel-build`, which runs [`scripts/vercel-build.mjs`](../scripts/vercel-build.mjs). It writes the [Build Output API v3](https://vercel.com/docs/build-output-api/v3) to `.vercel/output`:
 
 | Output | Content |
 |---|---|
